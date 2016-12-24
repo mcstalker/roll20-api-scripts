@@ -42,9 +42,12 @@ ListPool = function () {
         _.each(list, function (elm) {
             ChatMsg += '<tr><td>' + elm.name + '</td><td>' + elm.XP + '</td><td>' + elm.XPNextLevel + '</td></tr>';
         });
-    };
+    }
+    else {
+        CHATmsg += '<tr><td>No Records Found</tr></td>';
+	};
 
-    ChatMsg += '</table>'
+    ChatMsg += '</tbody></table>'
     SendChat(ChatMsg);
 }
 
