@@ -13,31 +13,32 @@ on("ready", function () {
 });
 
 SendChat = function (msg) {
-    sendChat ('XP_tracker', msg)
+    sendChat('XP_tracker', msg)
 }
 
 ShowHelp = function () {
-//TBD
+    //TBD
 }
 
 // The function sends the list of characters in the XP pool to the campaign chat.
-ViewPool = function () {
-    var output = '/w gm <div>Members of the Pool<div><table border=\"1\">';
+ListPool = function () {
+    var ChatMsg = '/w gm <div>Members of the Pool<div><table border=\"1\">\
+        <tr><td><b>Name</b></td><td><b>Current XP</b></td><td><b>XP to Next Level</b></td></tr>';
 
-    list = GetPoolMembers();
-    log(list);
+    list = GetPoolCurrentXP();
+
     if (('undefined' !== typeof list) && (list !== '')) {
 
-        list.forEach(function (elm) {
-            output += '<td>' + GetCharName(elm) + '</td></tr>';
+        _.each(list, function (elm) {
+            ChatMsg += '<tr><td>' + elm.name + '</td><td>' + elm.XP + '</td><td>' + elm.XPNextLevel + '</td></tr>';
         });
-        output += '</table></div>'
-        SendChat(output);
+        ChatMsg += '</table></div></div>'
+        SendChat(ChatMsg);
     };
 }
 
 // The function returns a kust if character IDs stored in the state.XP_Tracker.PoolIDs.
-GetPoolMembers = function () {
+GetPoolMemberIDs = function () {
     if ('undefined' !== typeof state.XP_Tracker.PoolIDs) {
         return (Object.getOwnPropertyNames(state.XP_Tracker.PoolIDs));
     };
@@ -62,13 +63,19 @@ GetTokenCharID = function (msg) {
 
 // Add selected tokens of non-npc characters tot he state.XP_Tracker.PoolIDs
 AddTokentoXPPool = function (msg) {
-    var CharID = GetTokenCharID(msg);
-    log("AddTokentoXPPool:CharID: " + CharID);
-    _.each(CharID, function (Id) {
-        log("AddTokentoXPPool:ID: " + Id + " Name: " + GetCharName(Id));
-        state.XP_Tracker.PoolIDs[Id] = GetCharName(Id);
-    });
-    log("AddTokentoXPPool:Object.getOwnPropertyNames(state.XP_Tracker.PoolIDs) : " + GetPoolMembers());
+    var CharID = GetTokenCharID(msg),
+        ChatMsg;
+    if (CharID.length !== 0) {
+        ChatMsg = "<div>The following charecters where added to the XP Pool:"
+        _.each(CharID, function (Id) {
+            state.XP_Tracker.PoolIDs[Id] = GetCharName(Id);
+            ChatMsg += "<div>" + GetCharName(Id) + ",</div>";
+        });
+        ChatMsg += "</div>";
+    }
+    else { ChatMsg = "No Characters were added to the XP Pool becauce no non-NPC characters were found." };
+
+    SendChat(ChatMsg);
 }
 
 AddCharbyName = function (name) {
@@ -81,26 +88,53 @@ AddCharbyName = function (name) {
         return;
     }
     else {
-        var output = '/w gm <div>The following characters have been found that match the name you submitted.  Please select the character(s) you wish to add.'
+        var ChatMsg = '/w gm <div>The following characters have been found that match the name you submitted.  Please select the character(s) you wish to add.'
         list.forEach(function (elm) {
-            output += '<div><a href="!XP_tracker --AddId ' + elm.id + '">' + GetCharName(elm.id) + '</a></div>';
+            ChatMsg += '<div><a href="!XP_tracker --AddId ' + elm.id + '">' + GetCharName(elm.id) + '</a></div>';
         });
-        output += '</div>'
-        SendChat(output);
+        ChatMsg += '</div>'
+        SendChat(ChatMsg);
     }
 
     var characterId = list[0].id; // Assuming characters in the journal have unique names
     state.XP_Tracker.PoolIDs[id] = characterId;
     GetCharName(characterId);
-    log('AddCharacterToXPPool:name: ' + name);
     SendChat(name);
     SendChat('<div><a href="!XP_tracker --AddId ' + characterId + '">' + name + '</a></div>');
-    log(state.XP_Tracker.PoolIDs[id])
 }
 
+RemoveCharacterFromXPPool = function () {
+    var ChatMsg = '/w gm     <table border="1" cellspacing="0" cellpadding="0"> \
+	                            <tbody> \
+		                            <tr> \
+			                            <td colspan="3"><strong><em>Characters in the XP Pool:</em></strong></td> \
+		                            </tr> \
+		                            <tr> \
+			                            <td colspan="3"><strong><em>Select the Character to Remove</em></strong></td> \
+		                            </tr>',
+        ids = GetPoolMemberIDs();
 
-RemoveCharacterFromXPPool = function (id) {
+    ids.forEach(function (id) {
 
+        ChatMsg += '<tr> \
+			        <td><a href="!XP_tracker --removeid '+ id + '">' + GetCharName(id) + '</a></td> \
+		            </tr>';
+    });
+
+    ChatMsg += '            </tbody> \
+                             </table>';
+    SendChat(ChatMsg);
+}
+
+RemoveCharacterIdFromXPPool = function (id) {
+
+    var ChatMsg = 'Removind ' + GetCharName(id) + ' form XP Pool.';
+    SendChat(ChatMsg);
+    RemoveCharFromPool(id);
+
+}
+RemoveCharFromPool = function (id) {
+    delete state.XP_Tracker.PoolIDs[id];
 }
 
 AddXPToPool = function (xp) {
@@ -116,12 +150,10 @@ GetCharIDbyName = function (name) {
     var ActiveChar = GetAllActiveCharId(),
         FilteredList,
         i = 0;
-    //log('GetCharIDbyName:name:' + name);
+
     //ActiveChar.forEach(function (c) {
-    //    log('GetCharIDbyName:GetCharName(CharId):' + GetCharName(CharId));
     //    if (GetCharName(CharId).indexOf(name) !== -1) {
     //        FilteredList[i++] = CharId
-    //        log('GetCharIDbyName:found name:' + GetCharName(CharId))
     //    };
     //})
     //return (FilteredList)
@@ -130,9 +162,7 @@ GetCharIDbyName = function (name) {
 // The function takes a character ID and returns the character name.
 
 GetCharName = function (id) {
-    //log('GetCharName:id: ' + id)
     var Character = getObj("character", id);
-    //log('GetCharName:Character: ' + Character)
     if ('undefined' !== typeof Character) {
 
         if ('undefined' !== typeof Character.attributes.name) {
@@ -140,14 +170,19 @@ GetCharName = function (id) {
         };
     };
 
-    //log('GetCharName:name: ' + name)
     return (name);
+}
+
+GetPoolCurrentXP = function () {
+
+    var result = GetCharCurrentXP(GetPoolMemberIDs());
+
+    return (result);
 }
 
 GetCharCurrentXP = function (ids) {
 
-    var tempobj,
-        result = {};
+    var result = {};
 
     if (ids.length == 0) {
         // There is no matching character
@@ -155,14 +190,16 @@ GetCharCurrentXP = function (ids) {
     }
 
     ids.forEach(function (id) {
-        result[id].xp_next_level = getAttrByName(id, "xp_next_level", "current");
-        result[id].xp = getAttrByName(id, "xp", "current");
-         = getObj("character", id);
-        result[id].x = Character.attributes.name;
-
-        return (result);
+        result[id] = {
+            XP: getAttrByName(id, "xp", "current"),
+            name: getObj("character", id),
+            XPNextLevel: getAttrByName(id, "xp_next_level", "current")
+        };
+        result[id].name = result[id].name.attributes.name;
     });
+    return (result);
 }
+
 GetAllActiveCharId = function () {
     var ActiveChar = findObjs({
         _type: 'attribute',
@@ -170,16 +207,7 @@ GetAllActiveCharId = function () {
     });
 
     _.each(ActiveChar, function (obj) {
-        log("GetAllActiveCharId:Object.getOwnPropertyNames(obj.attributes): " + Object.getOwnPropertyNames(obj.attributes));
-        log("GetAllActiveCharId:Object.obj.attributes.name: " + obj.attributes.name);
-        log("GetAllActiveCharId:Object.obj.attributes.current: " + obj.attributes.current);
-        log("GetAllActiveCharId:Found obj.Id: " + obj.id + " :" + obj.attributes.name + " :" + obj.attributes.current + " obj.attributes._id:" + obj.attributes._id);
     });
-    //    log("GetAllActiveCharId:ActiveChar[100].id: " + ActiveChar[100].id);
-    //    log("GetAllActiveCharId:ActiveChar PropertyNames: " + Object.getOwnPropertyNames(ActiveChar[100].attributes));
-    //    log("GetAllActiveCharId:ActiveChar[100].attributes.name: " + ActiveChar[100].attributes.name);
-    //    log("GetAllActiveCharId:ActiveChar PropertyNames: " + Object.getOwnPropertyNames(ActiveChar[100].attributes.current));
-    //    log("GetAllActiveCharId:ActiveChar[100].attributes.current: " + ActiveChar[100].attributes.current);
     //ActiveChar = filterObjs(function (ActiveChar) {
     //    if (ActiveChar.attributes.is_npc.current == 0);
     //});
@@ -213,14 +241,12 @@ on("chat:message", function (msg) {
                 if (args.length > 0) {
                     cmds = args.shift().split(/\s+/);
 
-                    log(cmds[0].toUpperCase())
                     switch (cmds[0].toUpperCase()) {
                         case 'HELP':
                             ShowHelp();
                             break;
                         case 'ADDTOKEN':
                             AddTokentoXPPool(msg);
-
                             break;
                         case 'ADD':
                             AddCharbyName(cmds[1]);
@@ -228,14 +254,18 @@ on("chat:message", function (msg) {
                         case 'REMOVE':
                             RemoveCharacterFromXPPool();
                             break;
-                        case 'XP':
+                        case 'REMOVEID':
+                            RemoveCharacterIdFromXPPool(cmds[1]);
+                            break;
+                        case 'XPTOPOOL':
                             AddXPToPool()
                             break;
-                        case 'VIEW':
-                            ViewPool();
-                            log(Object.getOwnPropertyNames(state.XP_Tracker.Config).sort())
+                        case 'XPTOTOKEN':
+                            AddXPToPool()
                             break;
-
+                        case 'LIST':
+                            ListPool();
+                            break;
                     }
                 }
         }
