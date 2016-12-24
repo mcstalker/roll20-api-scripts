@@ -12,18 +12,28 @@ on("ready", function () {
     log("XP Tracker Version " + state.XP_Tracker.Version + " is now ready.");
 });
 
+// This function send a message to the campaigns chat window frin XP_tracker.
 SendChat = function (msg) {
     sendChat('XP_tracker', msg)
 }
 
+// Need to work on this function...
 ShowHelp = function () {
     //TBD
 }
 
 // The function sends the list of characters in the XP pool to the campaign chat.
 ListPool = function () {
-    var ChatMsg = '/w gm <div>Members of the Pool<div><table border=\"1\">\
-        <tr><td><b>Name</b></td><td><b>Current XP</b></td><td><b>XP to Next Level</b></td></tr>';
+    var ChatMsg = '/w gm     <table border="1" cellspacing="0" cellpadding="0"> \
+	                            <tbody> \
+		                            <tr> \
+			                            <td colspan="3"><strong><em>Members of the Pool:</em></strong></td> \
+		                            </tr> \
+                                    <tr> \
+                                        <td><strong>Name</strong></td> \
+                                        <td><strong>Current XP</strong></td> \
+                                        <td><strong>XP to Next Level</strong></td> \
+                                    </tr>';
 
     list = GetPoolCurrentXP();
 
@@ -32,9 +42,10 @@ ListPool = function () {
         _.each(list, function (elm) {
             ChatMsg += '<tr><td>' + elm.name + '</td><td>' + elm.XP + '</td><td>' + elm.XPNextLevel + '</td></tr>';
         });
-        ChatMsg += '</table></div></div>'
-        SendChat(ChatMsg);
     };
+
+    ChatMsg += '</table>'
+    SendChat(ChatMsg);
 }
 
 // The function returns a kust if character IDs stored in the state.XP_Tracker.PoolIDs.
@@ -63,21 +74,22 @@ GetTokenCharID = function (msg) {
 
 // Add selected tokens of non-npc characters tot he state.XP_Tracker.PoolIDs
 AddTokentoXPPool = function (msg) {
-    var CharID = GetTokenCharID(msg),
+    var ids = GetTokenCharID(msg),
         ChatMsg;
-    if (CharID.length !== 0) {
-        ChatMsg = "<div>The following charecters where added to the XP Pool:"
-        _.each(CharID, function (Id) {
-            state.XP_Tracker.PoolIDs[Id] = GetCharName(Id);
-            ChatMsg += "<div>" + GetCharName(Id) + ",</div>";
+    if (ids.length !== 0) {
+        ChatMsg = "/w gm <div>The following charecters where added to the XP Pool:"
+        _.each(ids, function (id) {
+            state.XP_Tracker.PoolIDs[id] = GetCharName(id);
+            ChatMsg += "<div>" + GetCharName(id) + ",</div>";
         });
         ChatMsg += "</div>";
     }
-    else { ChatMsg = "No Characters were added to the XP Pool becauce no non-NPC characters were found." };
+    else { ChatMsg = "/w gm No Characters were added to the XP Pool becauce no non-NPC characters were sekected." };
 
     SendChat(ChatMsg);
 }
 
+// Need to work on this function...
 AddCharbyName = function (name) {
 
     var list = GetCharIDbyName(name);
@@ -103,6 +115,7 @@ AddCharbyName = function (name) {
     SendChat('<div><a href="!XP_tracker --AddId ' + characterId + '">' + name + '</a></div>');
 }
 
+//This function displayes a list of characters in the XP Pool and 
 RemoveCharacterFromXPPool = function () {
     var ChatMsg = '/w gm     <table border="1" cellspacing="0" cellpadding="0"> \
 	                            <tbody> \
@@ -117,7 +130,8 @@ RemoveCharacterFromXPPool = function () {
     ids.forEach(function (id) {
 
         ChatMsg += '<tr> \
-			        <td><a href="!XP_tracker --removeid '+ id + '">' + GetCharName(id) + '</a></td> \
+			        <td>' + GetCharName(id) + '</td> \
+                    <td><a href="!XP_tracker --removeid '+ id + '">Remove</a> \
 		            </tr>';
     });
 
@@ -126,19 +140,60 @@ RemoveCharacterFromXPPool = function () {
     SendChat(ChatMsg);
 }
 
+RemoveTokenFromXPPool = function (msg) {
+    var ids = GetTokenCharID(msg),
+        ChatMsg;
+    if (ids.length !== 0) {
+        ChatMsg = "/w gm <div>The following charecters have been removed from the XP Pool:"
+        _.each(ids, function (id) {
+            ChatMsg += "<div>" + GetCharName(id) + ",</div>";
+            RemoveCharFromPool(id);
+        });
+        ChatMsg += "</div>";
+    }
+    else { ChatMsg = "/w gm No Characters were removed from the XP Pool becauce no non-NPC characters were sekected." };
+
+    SendChat(ChatMsg);
+}
+
 RemoveCharacterIdFromXPPool = function (id) {
 
-    var ChatMsg = 'Removind ' + GetCharName(id) + ' form XP Pool.';
+    var ChatMsg = '/w gm Removing ' + GetCharName(id) + ' form XP Pool.';
     SendChat(ChatMsg);
     RemoveCharFromPool(id);
 
 }
+
 RemoveCharFromPool = function (id) {
     delete state.XP_Tracker.PoolIDs[id];
 }
 
 AddXPToPool = function (xp) {
 
+    var XPeach,
+        ids = GetPoolMemberIDs(),
+        CurrXP = GetPoolCurrentXP(),
+        newxp,
+        CharObj;
+
+    log('AddXPToPool:ida:' + ids);
+    log('AddXPToPool:CurrXP:' + CurrXP);
+    if (ids.length !== 0) {
+        XPeach = xp / ids.length;
+    }
+    else { return; };
+
+    ids.forEach(function (id) {
+
+        newxp = parseFloat(CurrXP[id].XP + XPeach);
+        if (newxp >= CurrXP[id].XPNextLevel) {
+            SendChat(CurrXP[id].name + ' has leveled up.')
+        }
+        CharObj = getObj("character", id);
+
+        var Obj = findObjs({ _type: "attribute", name: "xp", id })[0];
+        currXP.set("current", newxp);
+    });
 }
 
 AppXPtoSelected = function (xp, ids) {
@@ -160,7 +215,6 @@ GetCharIDbyName = function (name) {
 }
 
 // The function takes a character ID and returns the character name.
-
 GetCharName = function (id) {
     var Character = getObj("character", id);
     if ('undefined' !== typeof Character) {
@@ -253,6 +307,9 @@ on("chat:message", function (msg) {
                             break;
                         case 'REMOVE':
                             RemoveCharacterFromXPPool();
+                            break;
+                        case 'REMOVETOKEN':
+                            RemoveTokenFromXPPool(msg);
                             break;
                         case 'REMOVEID':
                             RemoveCharacterIdFromXPPool(cmds[1]);
