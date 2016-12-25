@@ -16,7 +16,7 @@
 // Output: None
 on("ready", function () {
     "use strict";
-    var CurrVersion = '0.1';
+    var CurrVersion = '0.2.1';
 
     if (!state.XP_Tracker) {
         state.XP_Tracker = {
