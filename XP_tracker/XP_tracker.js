@@ -11,7 +11,7 @@
     - Write function to send selected tokens XP to the pool.
     - Write function to send selected tokens XP to one or more characters (Do not know how to do this yet.
 */
-// Preloads the API, setup state object, and creates XP_tracker Handout log if handout logging is enabled it does not exist.
+// Preload the API, setup state object, and creates XP_tracker Handout log if handout logging is enabled it does not exist.
 // Input: None
 // Output: None
 on("ready", function () {
