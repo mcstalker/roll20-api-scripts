@@ -443,31 +443,18 @@ GetCharCurrentXP = function (ids) {
 }
 
 IsNPC = function (id) {
-    var is_npc = findObjs({
-        _characterid: id,
-        name: 'is_npc'
-    })[0];
-
-    log("IsNPC:id: " + id);
-    log("IsNPC:is_npc: " + is_npc);
-    if (typeof is_npc.attributes !== 'undefined') {
-        log("IsNPC:Object.getOwnPropertyNames(is_npc): " + Object.getOwnPropertyNames(is_npc.attributes));
+    var AttrbutesToSearchFor = ['is_ncp', 'npc'],
+	is_npc;
+    
+    AttrbutesToSearchFor.forEach (function (Attr) {
+	is_npc = findObjs({
+            _characterid: id,
+            name: 'is_npc'
+        })[0];
+	if ((typeof is_npc !== 'undefined') && (is_npc.attributes.current == 1)) {
+	    return (true);
+	};
     };
-    if ((typeof is_npc.attributes.current !== 'undefined') && (is_npc.attributes.current == 1)) {
-        return (true);
-    }
-
-    is_npc = findObjs({
-        _characterid: id,
-        name: 'npc'
-    })[0];
-
-    log("IsNPC:is_npc: " + is_npc);
-
-    if ((typeof is_npc.attributes.current !== 'undefined') && (is_npc.attributes.current == 1)) {
-        return (true);
-    }
-
     return (false);
 }
 
