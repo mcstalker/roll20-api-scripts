@@ -47,6 +47,8 @@ on("ready", function () {
     if (typeof state.XP_Tracker.PoolIDs === 'undefined') {
         state.XP_Tracker.PoolIDs = {};
     }
+
+    log("XP Tracker Version " + state.XP_Tracker.Version + " is now ready.");
 });
 
 // This function send a message to the campaigns chat window from XP_tracker.
