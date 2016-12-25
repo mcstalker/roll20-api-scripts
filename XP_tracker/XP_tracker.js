@@ -450,10 +450,11 @@ IsNPC = function (id) {
 
     log("IsNPC:id: " + id);
     log("IsNPC:is_npc: " + is_npc);
-
-    log("IsNPC:Object.getOwnPropertyNames(is_npc): " + Object.getOwnPropertyNames(is_npc));
-    if ((!is_npc) && (is_npc == 1)) {
-       return (true);
+    if (typeof is_npc.attributes !== 'undefined') {
+        log("IsNPC:Object.getOwnPropertyNames(is_npc): " + Object.getOwnPropertyNames(is_npc.attributes));
+    };
+    if ((typeof is_npc.attributes.current !== 'undefined') && (is_npc.attributes.current == 1)) {
+        return (true);
     }
 
     is_npc = findObjs({
@@ -463,7 +464,7 @@ IsNPC = function (id) {
 
     log("IsNPC:is_npc: " + is_npc);
 
-    if ((!is_npc) && (is_npc == 1)) {
+    if ((typeof is_npc.attributes.current !== 'undefined') && (is_npc.attributes.current == 1)) {
         return (true);
     }
 
