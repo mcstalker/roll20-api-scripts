@@ -97,7 +97,7 @@ var NoteLog = NoteLog || (function() {
                 nl.get('notes', function(n){
                     if(!_.isNull(n)){
                         setTimeout(function(){
-                            let text=n+'<br>'+bulletChar+' '+args.join(' ');
+                            let text = n + '<br>' + bulletChar + ' ' + args.join(' ');
                             nl.set('notes',text);                        
                         },0);
                     }
