@@ -1,24 +1,11 @@
 'use strict';
 
-/*functions to add:
-    - ShowHelp
-    - Show/edit configurations.
-        - Should you track changes in a handout?
-        - Should you only track changes in a handout?
-        - name of the handout to use?
-        - ???
-    - Create Handout
-    - Send update to Handout
-    - Rewrite SendLog to do most of the chat formating
-    - Write function to send selected tokens XP to the pool.
-    - Write function to send selected tokens XP to one or more characters (Do not know how to do this yet.
-*/
 // Preload the API, setup state object, and creates XP_tracker Handout log if handout logging is enabled it does not exist.
-// Input: None
-// Output: None
+//  Input: None
+//  Output: None
 
 on("ready", function () {
-    var CurrVersion = '0.31',
+    var CurrVersion = '0.31.1',
         output_msg = '';
 
     if (!state.XP_Tracker) {
@@ -52,6 +39,9 @@ on("ready", function () {
     SendChat(output_msg);
 });
 
+// Listens for call to API.  Then is reviews the argument list and calls the appropriate function.
+//  Input: Object (Roll20_msg)
+//  Output: None
 on("chat:message", function (Roll20_msg) {
     if ((Roll20_msg.type == "api") && (Roll20_msg.content.toLowerCase().indexOf("!xp_tracker") === 0) && (playerIsGM(Roll20_msg.playerid))) {
 
@@ -154,6 +144,9 @@ AddTokenToXPPool = function (Roll20_msg) {
     AddIdsToXPPool(GetTokenCharID(Roll20_msg));
 }
 
+// Add XP to one character Id.
+//  Input: Number(xp), Sting (Id)
+//  Output: String(output_msg) or False on error
 AddXPToId = function (xp, id) {
 
     if ((typeof id !== 'undefined') && (typeof id === 'string') && (id.length != 0)) {
@@ -171,18 +164,21 @@ AddXPToId = function (xp, id) {
             }
             return (output_msg);
         }
-        return (0)
+        return (false)
     }
 }
 
+// Add XP to one or more character Ids.
+//  Input: Number(xp), Array of Strings (Ids)
+//  Output: Boolean true on OK false on error
 AddXPToIds = function (xp, ids) {
-
+    
     var output_msg = '';
 
     if ((typeof ids === 'undefined') || (ids.len == 0)) {
         // There are no character ids
         SendChat("/w gm No Characters were found to get XP to.")
-        return (0);
+        return (false);
     }
     else if (typeof ids === 'string') {
         output_msg = AddXPToId(xp, ids);
@@ -194,10 +190,12 @@ AddXPToIds = function (xp, ids) {
         });
     };
     SendLog(output_msg);
-    return (1);
+    return (true);
 }
 
-// This function takes a block of XP and divides equally across all members of the XP pool.   
+// This function takes a block of XP and divides equally across all members of the XP pool. 
+//  Input: Number(xp)
+//  Output: none
 AddXPToPool = function (xp) {
 
     var ids = GetPoolMemberIDs();
@@ -210,6 +208,9 @@ AddXPToPool = function (xp) {
 
 }
 
+// This function takes a block of XP and divides equally across all selected non-NPC character tokens. 
+//  Input: Number(xp), Object (Roll20_msg)
+//  Output: none
 AddXPToTokens = function (xp, Roll20_msg) {
 
     var ids = GetTokenCharID(Roll20_msg);
@@ -221,8 +222,8 @@ AddXPToTokens = function (xp, Roll20_msg) {
 }
 
 //This function will create a handout log if it does not exist and add the obj to the state.XP_Tracker.Config.HandoutObj
-// Input: None
-// Output: If successful Roll20 Handout Object, on failure null 
+//  Input: None
+//  Output: If successful Roll20 Handout Object, on failure null 
 CreateHandoutLog = function () {
 
     var HandoutObj = createObj("handout", {
@@ -283,10 +284,10 @@ DisplayCharToBeRemovedFromXPPool = function () {
     SendChat(output_msg);
 }
 
-// The function display a list of active members of the XP pool.  The list contains the characters name, current XP, XP to next level and a button to add XP to a character or remove them
-// The function send the information to the campaign chat window
-// Input: None
-// Output: None
+// The function display a list of active members of the XP pool.  The list contains the characters name, current XP, XP to next 
+// level and a button to add XP to a character or remove them.  The function send the information to the campaign chat window
+//  Input: None
+//  Output: None
 DisplayPool = function () {
     var output_msg =
         '/w gm  <table border="1" cellspacing="0" cellpadding="0"> \
@@ -341,9 +342,12 @@ DisplayPool = function () {
     SendChat(output_msg);
 }
 
+// The function finds attributes object by the object Id and the attributes name.
+//  Input: String (Id), String (AttrName)
+//  Output: Object (AttrObj) or null if not found
 GetAttrObjectByName = function (id, AttrName) {
-    const attr = findObjs({ type: 'attribute', characterid: id, name: AttrName });
-    return attr && attr.length > 0 ? attr[0] : null;
+    const AttrObj = findObjs({ type: 'attribute', characterid: id, name: AttrName });
+    return AttrObj && AttrObj.length > 0 ? AttrObj[0] : null;
 }
 
 GetCharacterObj = function (id) {
@@ -379,15 +383,15 @@ GetCharCurrentXP = function (ids) {
 }
 
 // The function takes a character ID and returns the character name.
-// Input: Character Id
-// Output: Character Name or undefined if no name was found.
+//  Input: Character Id
+//  Output: Character Name or undefined if no name was found.
 GetCharNameById = function (id) {
     return (GetCharacterObj(id).attributes.name);
 }
 
 // This function will connect to the handout in found in state.XP_Tracker.Config.HandoutName or if it is not found it will call CreateHandoutLog () to create a new one
-// Input: None
-// Output: Roll20 Handout Object 
+//  Input: None
+//  Output: Roll20 Handout Object 
 GetHandout = function () {
     var HandoutObj = filterObjs(function (o) {
         return ('handout' === o.get('type') && state.XP_Tracker.Config.HandoutName === o.get('name') && false === o.get('archived'));
