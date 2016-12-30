@@ -5,7 +5,7 @@
 //  Output: None
 
 on("ready", function () {
-    var CurrVersion = '0.32',
+    var CurrVersion = '0.33',
         output_msg = '';
 
     if (!state.XP_Tracker) {
@@ -49,58 +49,64 @@ on("chat:message", function (Roll20_msg) {
             args = Roll20_msg.content.split(/\s+--/),
             ActiveCharacters;
 
-        switch (args.shift().toLowerCase()) {
-            case '!xp_tracker':
-                if (args.length > 0) {
-                    cmds = args.shift().split(/\s+/);
-                    switch (cmds[0].toLowerCase()) {
-                        case 'help':
-                            ShowHelp();
-                            break;
-                        case 'addtoken':
-                            AddTokenToXPPool(Roll20_msg);
-                            break;
-                        case 'add':
-                            AddCharByName(cmds[1]);
-                            break;
-                        case 'remove':
-                            DisplayCharToBeRemovedFromXPPool();
-                            break;
-                        case 'removetoken':
-                            RemoveTokenFromXPPool(Roll20_msg);
-                            break;
-                        case 'removeid':
-                            RemoveCharacterIdFromXPPool(cmds[1]);
-                            break;
-                        case 'xptopool':
-                            AddXPToPool(cmds[1])
-                            break;
-                        case 'xptotoken':
-                            AddXPToTokens(cmds[1], Roll20_msg)
-                            break;
-                        case 'xptoid':
-                            AddXPToIds(cmds[1], cmds[2])
-                            break;
-                        case 'list':
-                            DisplayPool();
-                            break;
-                        case 'test':
-                            WriteToHandoutLog('test');
-                            break;
-                        default:
-                            ShowHelp();
-                            break;
-                    }
-                }
+        log('One' + args);
+        args.splice(args.indexOf('!xp_tracker'), 1);
+
+        if (args.length > 0) {
+            cmds = args.shift().split(/\s+/);
+            log('Two' + args);
+            switch (cmds[0].toLowerCase()) {
+                case 'help':
+                    ShowHelp();
+                    break;
+                case 'addtoken':
+                    AddTokenToXPPool(Roll20_msg);
+                    break;
+                case 'add':
+                    AddCharByName(cmds[1]);
+                    break;
+                case 'remove':
+                    DisplayCharToBeRemovedFromXPPool();
+                    break;
+                case 'removetoken':
+                    RemoveTokenFromXPPool(Roll20_msg);
+                    break;
+                case 'removeid':
+                    RemoveCharacterIdFromXPPool(cmds[1]);
+                    break;
+                case 'xptopool':
+                    AddXPToPool(cmds[1])
+                    break;
+                case 'xptotoken':
+                    AddXPToTokens(cmds[1], Roll20_msg)
+                    break;
+                case 'xptoid':
+                    AddXPToIds(cmds[1], cmds[2])
+                    break;
+                case 'list':
+                    DisplayPool();
+                    break;
+                case 'test':
+                    WriteToHandoutLog('test');
+                    break;
+                default:
+                    ShowHelp();
+                    break;
+            }
+        }
+        else {
+            ShowHelp();
         }
     }
     else {
         SendChat('/w ' + Roll20_msg.playerid + ' You must be the GM to use this API.')
     }
+
 });
 
 // Need to work on this function...
 AddCharByName = function (name) {
+    SendChat('This is a space holder for future planned function ')
 }
 
 //The function adds one or more ids to the XP_tracker pool if they are not already a member
@@ -465,10 +471,14 @@ GetTimeStamp = function () {
     return (datestamp)
 }
 
-// The functions returns a array containing character IDs form the current selected tokens that are non-npc characters
-// Input: Roll20_msg object.
-// Output: Array of character IDs from the selected tokens that are non-npc characters
-GetTokenCharID = function (Roll20_msg) {
+// The functions returns a array containing character IDs form the current selected tokens that are non-npc characters by default but if you set NPC to true it will onlu return a list of N\PC characters ids.
+// Input: Object Roll20_msg,  Boolean (NPC (Default = false)).
+// Output: Array of Strings
+GetTokenCharID = function (Roll20_msg, NPC) {
+
+    if (NPC === undefined) {
+        NPC = false;
+    }
     var CharID = [],
         i = 0,
         tempobj;
@@ -477,8 +487,17 @@ GetTokenCharID = function (Roll20_msg) {
         _.each(Roll20_msg.selected, function (obj) {
             tempobj = findObjs({ _type: obj._type, id: obj._id });
             if (('undefined' !== typeof tempobj[0].attributes.represents) && (tempobj[0].attributes.represents !== "")) {
-                if (!IsNPC(tempobj[0].attributes.represents)) {
-                    CharID[i++] = tempobj[0].attributes.represents;
+                log('GetTokenCharID:NPC:' + NPC);
+                log('GetTokenCharID:IsNPC(tempobj[0].attributes.represents):' + IsNPC(tempobj[0].attributes.represents));
+                if (!NPC) {
+                    if (!IsNPC(tempobj[0].attributes.represents)) {
+                        CharID[i++] = tempobj[0].attributes.represents;
+                    }
+                }
+                else if (NPC) {
+                    if (IsNPC(tempobj[0].attributes.represents)) {
+                        CharID[i++] = tempobj[0].attributes.represents;
+                    }
                 }
             };
         });
@@ -532,6 +551,17 @@ RemoveCharFromPool = function (id) {
 
 }
 
+// The function will remove the token from the currect map of the give token id.
+//  Input: String (id)
+//  Output: none
+
+RemoveTokenFromPage = function (id) {
+    var obj = getObj("graphic", id);
+    if ((obj.get("_type") == "graphic") && (obj.get("_subtype") == "token")) {
+        obj.remove();
+    }
+}
+
 //This function removes the character ID entries from the state.XP_Tracker.PoolIDs of the selected 
 //  Input: Roll20_msg object
 //  Output None
@@ -576,7 +606,7 @@ SetAttrByName = function (id, AttrName, value) {
 ShowHelp = function () {
     var output_msg = '';
 
-    output_msg = ' \
+    output_msg = '/w gm \
         <table border="1" cellspacing="0" cellpadding="0";> \
             <tbody> \
                 <tr > \
