@@ -5,7 +5,7 @@
 //  Output: None
 
 on("ready", function () {
-    var CurrVersion = '0.31.1',
+    var CurrVersion = '0.32',
         output_msg = '';
 
     if (!state.XP_Tracker) {
@@ -88,7 +88,7 @@ on("chat:message", function (Roll20_msg) {
                             WriteToHandoutLog('test');
                             break;
                         default:
-                            SendChat('Error');
+                            ShowHelp();
                             break;
                     }
                 }
@@ -172,7 +172,7 @@ AddXPToId = function (xp, id) {
 //  Input: Number(xp), Array of Strings (Ids)
 //  Output: Boolean true on OK false on error
 AddXPToIds = function (xp, ids) {
-    
+
     var output_msg = '';
 
     if ((typeof ids === 'undefined') || (ids.len == 0)) {
@@ -574,7 +574,42 @@ SetAttrByName = function (id, AttrName, value) {
 // Input: None
 // Output: None
 ShowHelp = function () {
-    //TBD
+    var output_msg = '';
+
+    output_msg = ' \
+        <table border="1" cellspacing="0" cellpadding="0";> \
+            <tbody> \
+                <tr > \
+                    <td>!xp_tracker usage</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--help</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--add [character name]</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--addtoken</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--list</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--remove [character name]</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--removetoken</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--xptotoken</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--xptopool</td> \
+                </tr> \
+            </tbody> \
+        </table>';
+    log(output_msg);
+    SendChat(output_msg);
 }
 
 //This function will append to the handout log
