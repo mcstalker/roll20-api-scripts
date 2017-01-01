@@ -1,11 +1,48 @@
 'use strict';
 
+// D&D 5e challenge rating values to experience value.
+var ChallengeRatingTable5e = {
+    '0': 0,
+    '1/8': 25,
+    '1/4': 50,
+    '1/2': 100,
+    '1': 200,
+    '2': 450,
+    '3': 700,
+    '4': 1100,
+    '5': 1800,
+    '6': 2300,
+    '7': 2900,
+    '8': 3900,
+    '9': 5000,
+    '10': 5900,
+    '11': 7200,
+    '12': 8400,
+    '13': 10000,
+    '14': 11500,
+    '15': 13000,
+    '16': 15000,
+    '17': 18000,
+    '18': 20000,
+    '19': 22000,
+    '20': 25000,
+    '21': 33000,
+    '22': 41000,
+    '23': 50000,
+    '24': 62000,
+    '25': 75000,
+    '26': 90000,
+    '27': 105000,
+    '28': 120000,
+    '29': 135000,
+    '30': 155000
+};
+
 // Preload the API, setup state object, and creates XP_tracker Handout log if handout logging is enabled it does not exist.
 //  Input: None
 //  Output: None
-
 on("ready", function () {
-    var CurrVersion = '0.33',
+    var CurrVersion = '0.4',
         output_msg = '';
 
     if (!state.XP_Tracker) {
@@ -82,6 +119,9 @@ on("chat:message", function (Roll20_msg) {
                     break;
                 case 'xptoid':
                     AddXPToIds(cmds[1], cmds[2])
+                    break;
+                case 'xpfromtoken':
+                    AddXPToPoolFromToken(Roll20_msg);
                     break;
                 case 'list':
                     DisplayPool();
@@ -212,6 +252,33 @@ AddXPToPool = function (xp) {
     else { return; };
 
 
+}
+
+// This function will find the XP value of the selected NPC tokens and it will add the experience value to the XP pool.
+//  Input: Roll20_msg object
+//  Output: None
+AddXPToPoolFromToken = function (Roll20_msg) {
+    var NPCIdObjArray = GetTokenNPCID(Roll20_msg),
+        NPCObj,
+        TempXP,
+        TotalXP = 0;
+
+    log('AddXPToPoolFromToken:NPCIdObjArray.length:' + NPCIdObjArray.length);
+    NPCIdObjArray.forEach(function (NPCObj) {
+        log('AddXPToPoolFromToken:NPCObj.CharId:' + NPCObj.CharID);
+        TempXP = GetNPCXP(NPCObj.CharID);
+        if (TempXP != null) {
+            TotalXP += parseInt(TempXP);
+        }
+        else {
+            SendChat('No experience value was found for ' + GetCharNameById(NPCObj.CharID) + '.');
+        }
+    });
+
+    if (TotalXP > 0) {
+        AddXPToPool(TotalXP);
+    }
+    log('AddXPToPoolFromToken:TotalXP:' + TotalXP);
 }
 
 // This function takes a block of XP and divides equally across all selected non-NPC character tokens. 
@@ -356,10 +423,16 @@ GetAttrObjectByName = function (id, AttrName) {
     return AttrObj && AttrObj.length > 0 ? AttrObj[0] : null;
 }
 
+// This function takes a Roll20 character object Id string and returns the character object.
+//  Input: String (Id {Roll20 Object Id String})
+//  Output: Object (Character Object) 
 GetCharacterObj = function (id) {
     return (getObj("character", id))
 }
 
+// This function takes a Roll20 character object Id string and returns object with the name of the character, its current xp and the xp it needs to reach its next level.
+//  Input: Input: String (Id {Roll20 Object Id String})
+//  Output: Object {name, XP, XPNextLevel}
 GetCharCurrentXP = function (ids) {
 
     var result = {};
@@ -411,6 +484,39 @@ GetHandout = function () {
     }
 }
 
+// This function takes a Roll20 character object Id string and returns xp value of the NPC.
+//  Input: String (Id {Roll20 Object Id String})
+//  Output: Number
+GetNPCXP = function (CharID) {
+
+    var xp = null,
+        AttrToCheck = ['xp', 'npc_xp', 'challenge', 'npc_challenge'],
+        AttrObj,
+        AttrName;
+
+    log('GetNPCXP:Start');
+    log('GetNPCXP:CharID:' + CharID);
+    AttrToCheck.forEach(function (AttrName) {
+        log('GetNPCXP:Attr' + AttrName);
+        if (IfAttrExists(CharID, AttrName)) {
+            AttrCurrentValue = getAttrByName(CharID, AttrName, 'current');
+            if (AttrCurrentValue != null) {
+                if ((AttrName == 'npc_challenge') || (AttrName == 'challenge')) {
+                    xp = ChallengeRatingTable5e[AttrCurrentValue];
+                }
+                else {
+                    xp = AttrCurrentValue;
+                }
+                return (xp)
+            }
+        }
+    });
+    return (xp);
+}
+
+// This function takes a Roll20 character object Id string and an attribute name string.  It check to see if the attribute exists and returns the existing object or creates a new attribute and returns that object.
+//  Input: String (Id {Roll20 Object Id String})
+//  Output: Number
 GetOrCreateAttr = function (id, AttrName) {
 
     var AttrObj = findObjs({ type: 'attribute', characterid: id, name: AttrName })[0];
@@ -441,6 +547,9 @@ GetPoolMemberIDs = function () {
     return ('');
 };
 
+// This function returns the number of members of the XP Pool.
+//  Input: None
+//  Output: Number
 GetPoolSize = function () {
 
     return (GetPoolMemberIDs().length);
@@ -471,14 +580,11 @@ GetTimeStamp = function () {
     return (datestamp)
 }
 
-// The functions returns a array containing character IDs form the current selected tokens that are non-npc characters by default but if you set NPC to true it will onlu return a list of N\PC characters ids.
-// Input: Object Roll20_msg,  Boolean (NPC (Default = false)).
+// The functions returns a array containing character IDs form the current selected tokens that are non-npc characters.
+// Input: Object Roll20_msg
 // Output: Array of Strings
-GetTokenCharID = function (Roll20_msg, NPC) {
+GetTokenCharID = function (Roll20_msg) {
 
-    if (NPC === undefined) {
-        NPC = false;
-    }
     var CharID = [],
         i = 0,
         tempobj;
@@ -487,23 +593,53 @@ GetTokenCharID = function (Roll20_msg, NPC) {
         _.each(Roll20_msg.selected, function (obj) {
             tempobj = findObjs({ _type: obj._type, id: obj._id });
             if (('undefined' !== typeof tempobj[0].attributes.represents) && (tempobj[0].attributes.represents !== "")) {
-                log('GetTokenCharID:NPC:' + NPC);
-                log('GetTokenCharID:IsNPC(tempobj[0].attributes.represents):' + IsNPC(tempobj[0].attributes.represents));
-                if (!NPC) {
-                    if (!IsNPC(tempobj[0].attributes.represents)) {
-                        CharID[i++] = tempobj[0].attributes.represents;
-                    }
-                }
-                else if (NPC) {
-                    if (IsNPC(tempobj[0].attributes.represents)) {
-                        CharID[i++] = tempobj[0].attributes.represents;
-                    }
+                if (!IsNPC(tempobj[0].attributes.represents)) {
+                    CharID[i++] = tempobj[0].attributes.represents;
                 }
             };
         });
     }
 
     return (CharID);
+}
+
+// The functions returns a array of Token Id and the Character ID they represent form the current selected tokens that are only npc characters.
+// Input: Object Roll20_msg
+// Output: Array objects containing {TokenID, CharID}
+GetTokenNPCID = function (Roll20_msg) {
+
+    var NPCIdObjArray = [],
+        i = 0,
+        CharObj,
+        Obj;
+
+    if (typeof Roll20_msg.selected !== 'undefined') {
+        _.each(Roll20_msg.selected, function (Obj) {
+            CharObj = getObj(Obj._type, Obj._id);
+            if (('undefined' !== typeof CharObj.attributes.represents) && (CharObj.attributes.represents !== "")) {
+                log('GetTokenNPCIDLCharObj.attributes.represents:' + CharObj.attributes.represents);
+                if (IsNPC(CharObj.attributes.represents)) {
+                    NPCIdObjArray[i++] = {
+                        TokenID: Obj._id,
+                        CharID: CharObj.attributes.represents
+                    }
+                    log('GetTokenNPCID:NPCIdObjArray[i-1].CharID' + NPCIdObjArray[i - 1].CharID);
+                }
+            };
+        });
+    }
+    return (NPCIdObjArray);
+}
+
+// The functions returns a true if the given attribute name was found in the object Id provided otherwise it returns false.
+// Input: String Object ID, String Attribute Name
+// Output: Boolean (True if the Attribute Name was found on the character or false.
+IfAttrExists = function (id, AttrName) {
+
+    if ((findObjs({ _characterid: id, name: AttrName, type: 'attribute' })[0])) {
+        return (true);
+    }
+    return (false);
 }
 
 IsNPC = function (id) {
@@ -554,7 +690,6 @@ RemoveCharFromPool = function (id) {
 // The function will remove the token from the currect map of the give token id.
 //  Input: String (id)
 //  Output: none
-
 RemoveTokenFromPage = function (id) {
     var obj = getObj("graphic", id);
     if ((obj.get("_type") == "graphic") && (obj.get("_subtype") == "token")) {
@@ -635,6 +770,9 @@ ShowHelp = function () {
                 </tr> \
                 <tr> \
                     <td style="text-indent: 2em;">--xptopool</td> \
+                </tr> \
+                <tr> \
+                    <td style="text-indent: 2em;">--xpfromtoken</td> \
                 </tr> \
             </tbody> \
         </table>';
