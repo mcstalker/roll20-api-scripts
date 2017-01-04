@@ -1,5 +1,8 @@
 'use strict';
 
+// Current Vision of the XP_Tracker API.
+var CurrVersion = '0.4.1';
+
 // D&D 5e challenge rating values to experience value.
 var ChallengeRatingTable5e = {
     '0': 0,
@@ -42,8 +45,7 @@ var ChallengeRatingTable5e = {
 //  Input: None
 //  Output: None
 on("ready", function () {
-    var CurrVersion = '0.4',
-        output_msg = '';
+    var output_msg = '';
 
     if (!state.XP_Tracker) {
         state.XP_Tracker = {
@@ -73,75 +75,76 @@ on("ready", function () {
     }
     output_msg = "XP Tracker Version " + state.XP_Tracker.Version + " is now ready.";
     log(output_msg);
-    SendChat(output_msg);
+    SendChat('/w gm ' + output_msg);
 });
 
 // Listens for call to API.  Then is reviews the argument list and calls the appropriate function.
 //  Input: Object (Roll20_msg)
 //  Output: None
 on("chat:message", function (Roll20_msg) {
-    if ((Roll20_msg.type == "api") && (Roll20_msg.content.toLowerCase().indexOf("!xp_tracker") === 0) && (playerIsGM(Roll20_msg.playerid))) {
+    if ((Roll20_msg.type == "api") && (Roll20_msg.content.toLowerCase().indexOf("!xp_tracker") === 0)) {
+        if (playerIsGM(Roll20_msg.playerid)) {
 
-        var cmds,
-            args = Roll20_msg.content.split(/\s+--/),
-            ActiveCharacters;
+            var cmds,
+                args = Roll20_msg.content.split(/\s+--/),
+                ActiveCharacters;
 
-        log('One' + args);
-        args.splice(args.indexOf('!xp_tracker'), 1);
+            if (args[0].toLowerCase().indexOf('!xp_tracker') === 0) {
+                args = args.splice(1, 1);
+            };
 
-        if (args.length > 0) {
-            cmds = args.shift().split(/\s+/);
-            log('Two' + args);
-            switch (cmds[0].toLowerCase()) {
-                case 'help':
-                    ShowHelp();
-                    break;
-                case 'addtoken':
-                    AddTokenToXPPool(Roll20_msg);
-                    break;
-                case 'add':
-                    AddCharByName(cmds[1]);
-                    break;
-                case 'remove':
-                    DisplayCharToBeRemovedFromXPPool();
-                    break;
-                case 'removetoken':
-                    RemoveTokenFromXPPool(Roll20_msg);
-                    break;
-                case 'removeid':
-                    RemoveCharacterIdFromXPPool(cmds[1]);
-                    break;
-                case 'xptopool':
-                    AddXPToPool(cmds[1])
-                    break;
-                case 'xptotoken':
-                    AddXPToTokens(cmds[1], Roll20_msg)
-                    break;
-                case 'xptoid':
-                    AddXPToIds(cmds[1], cmds[2])
-                    break;
-                case 'xpfromtoken':
-                    AddXPToPoolFromToken(Roll20_msg);
-                    break;
-                case 'list':
-                    DisplayPool();
-                    break;
-                case 'test':
-                    WriteToHandoutLog('test');
-                    break;
-                default:
-                    ShowHelp();
-                    break;
+            if (args.length > 0) {
+                cmds = args.shift().split(/\s+/);
+                switch (cmds[0].toLowerCase()) {
+                    case 'help':
+                        ShowHelp();
+                        break;
+                    case 'addtoken':
+                        AddTokenToXPPool(Roll20_msg);
+                        break;
+                    case 'add':
+                        AddCharByName(cmds[1]);
+                        break;
+                    case 'remove':
+                        DisplayCharToBeRemovedFromXPPool();
+                        break;
+                    case 'removetoken':
+                        RemoveTokenFromXPPool(Roll20_msg);
+                        break;
+                    case 'removeid':
+                        RemoveCharacterIdFromXPPool(cmds[1]);
+                        break;
+                    case 'xptopool':
+                        AddXPToPool(cmds[1])
+                        break;
+                    case 'xptotoken':
+                        AddXPToTokens(cmds[1], Roll20_msg)
+                        break;
+                    case 'xptoid':
+                        AddXPToIds(cmds[1], cmds[2])
+                        break;
+                    case 'xpfromtoken':
+                        AddXPToPoolFromToken(Roll20_msg);
+                        break;
+                    case 'list':
+                        DisplayPool();
+                        break;
+                    case 'test':
+                        WriteToHandoutLog('test');
+                        break;
+                    default:
+                        ShowHelp();
+                        break;
+                }
+            }
+            else {
+                ShowHelp();
             }
         }
         else {
-            ShowHelp();
+            SendChat('/w ' + Roll20_msg.playerid + ' You must be the GM to use this API.')
         }
     }
-    else {
-        SendChat('/w ' + Roll20_msg.playerid + ' You must be the GM to use this API.')
-    }
-
 });
 
 // Need to work on this function...
@@ -183,7 +186,7 @@ AddIdToXPPool = function (id) {
     }
 }
 
-// Add selected tokens of non-npc characters to the state.XP_Tracker.PoolIDs
+// Add selected tokens of non-NPC characters to the state.XP_Tracker.PoolIDs
 //  Input: Roll20_msg object
 //  Output: None
 AddTokenToXPPool = function (Roll20_msg) {
@@ -203,7 +206,7 @@ AddXPToId = function (xp, id) {
 
         if (typeof Obj !== 'undefined') {
 
-            SetAttrByName(id, 'xp', (parseInt(CurrXP[id].XP) + parseInt(xp)));
+            SetAttrCurrentValueByName(id, 'xp', (parseInt(CurrXP[id].XP) + parseInt(xp)));
             output_msg = CurrXP[id].name + ' as received ' + xp + ' experience points for a total of ' + (parseInt(CurrXP[id].XP) + parseInt(xp)) + '.';
             if (parseInt(CurrXP[id].XP) + parseInt(xp) >= CurrXP[id].XPNextLevel) {
                 output_msg += ' and has <span style="background-color: initial; color: rgb(0, 0, 0); font-size: 18px; font-weight: bold;">leveled up</span>';
@@ -430,8 +433,8 @@ GetCharacterObj = function (id) {
     return (getObj("character", id))
 }
 
-// This function takes a Roll20 character object Id string and returns object with the name of the character, its current xp and the xp it needs to reach its next level.
-//  Input: Input: String (Id {Roll20 Object Id String})
+// This function takes a Roll20 character object Id string and returns object with the name of the character, its current XP and the XP it needs to reach its next level.
+//  Input: String (Id {Roll20 Object Id String})
 //  Output: Object {name, XP, XPNextLevel}
 GetCharCurrentXP = function (ids) {
 
@@ -484,7 +487,7 @@ GetHandout = function () {
     }
 }
 
-// This function takes a Roll20 character object Id string and returns xp value of the NPC.
+// This function takes a Roll20 character object Id string and returns XP value of the NPC.
 //  Input: String (Id {Roll20 Object Id String})
 //  Output: Number
 GetNPCXP = function (CharID) {
@@ -515,21 +518,21 @@ GetNPCXP = function (CharID) {
 }
 
 // This function takes a Roll20 character object Id string and an attribute name string.  It check to see if the attribute exists and returns the existing object or creates a new attribute and returns that object.
-//  Input: String (Id {Roll20 Object Id String})
-//  Output: Number
-GetOrCreateAttr = function (id, AttrName) {
+//  Input: String (Id {Roll20 Object Id String}), String (Attribute Name)
+//  Output: Roll20 Object to new or existing Attribute
+GetOrCreateAttr = function (CharID, AttrName) {
 
-    var AttrObj = findObjs({ type: 'attribute', characterid: id, name: AttrName })[0];
-
-    if (!AttrObj) {
-        AttrObj = createObj('attribute', {
-            name: AttrName,
-            characterid: id
-        });
+    if (IfAttrExists(CharID, AttrName)) {
+        return (findObjs({ type: 'attribute', characterid: CharID, name: AttrName })[0]);
     }
-    return (AttrObj);
+    else {
+        return (createObj('attribute', { name: AttrName, characterid: CharID }));
+    }
 }
 
+// This function finds the members of the XP Pool and returns object with the name of the character, its current XP and the XP it needs to reach its next level.
+//  Input: none
+//  Output: Object {name, XP, XPNextLevel}
 GetPoolCurrentXP = function () {
 
     var result = GetCharCurrentXP(GetPoolMemberIDs());
@@ -580,7 +583,7 @@ GetTimeStamp = function () {
     return (datestamp)
 }
 
-// The functions returns a array containing character IDs form the current selected tokens that are non-npc characters.
+// The functions returns a array containing character IDs form the current selected tokens that are non-NPC characters.
 // Input: Object Roll20_msg
 // Output: Array of Strings
 GetTokenCharID = function (Roll20_msg) {
@@ -603,7 +606,7 @@ GetTokenCharID = function (Roll20_msg) {
     return (CharID);
 }
 
-// The functions returns a array of Token Id and the Character ID they represent form the current selected tokens that are only npc characters.
+// The functions returns a array of Token Id and the Character ID they represent form the current selected tokens that are only NPC characters.
 // Input: Object Roll20_msg
 // Output: Array objects containing {TokenID, CharID}
 GetTokenNPCID = function (Roll20_msg) {
@@ -642,15 +645,18 @@ IfAttrExists = function (id, AttrName) {
     return (false);
 }
 
-IsNPC = function (id) {
+// This function uses a Roll20 character Id string to look at a character to determine if it is a NPC or not.  By default it considers all 
+// characters are not NPC but if it finds a known Attribute that denotes it as a NPC if returns true
+//  Input: String (Id {Roll20 Object Id String})
+//  Output: Boolean (true if the character is an NPC. else false)
+IsNPC = function (Charid) {
     var AttrbutesToSearchFor = ['is_npc', 'npc'],
     Obj,
     result = false;
 
     AttrbutesToSearchFor.forEach(function (AttrName) {
-        Obj = GetAttrObjectByName(id, AttrName);
-
-        if (Obj) {
+        if (IfAttrExists(CharID, AttrName)) {
+            Obj = GetAttrObjectByName(Charid, AttrName);
             if (Obj.attributes.current == 1) {
                 result = true;
             }
@@ -687,7 +693,7 @@ RemoveCharFromPool = function (id) {
 
 }
 
-// The function will remove the token from the currect map of the give token id.
+// The function will remove the token from the current map of the give token id.
 //  Input: String (id)
 //  Output: none
 RemoveTokenFromPage = function (id) {
@@ -731,8 +737,15 @@ SendLog = function (output_msg) {
     };
 }
 
-SetAttrByName = function (id, AttrName, value) {
+// The next two functions takes a Roll20 object Id string, an attribute name string and a value and update or create the attribute in the character sheet.  
+// The first function updates the current field the second one updates the max field.
+//  Input: String (Id {Roll20 Object Id String}), String (AttrName), String (Value to set)
+//  Output: none
+SetAttrCurrentValueByName = function (id, AttrName, value) {
     GetOrCreateAttr(id, AttrName).set('current', value);
+}
+SetAttrMaxValueByName = function (id, AttrName, value) {
+    GetOrCreateAttr(id, AttrName).set('max', value);
 }
 
 // Need to work on this function...
@@ -741,42 +754,57 @@ SetAttrByName = function (id, AttrName, value) {
 ShowHelp = function () {
     var output_msg = '';
 
-    output_msg = '/w gm \
-        <table border="1" cellspacing="0" cellpadding="0";> \
+    output_msg = '/w gm <div style="background-color: white; font-size:85%;"> \
+        <table border="1" cellspacing="0"; cellpadding="0"; width="100%";> \
             <tbody> \
-                <tr > \
-                    <td>!xp_tracker usage</td> \
+                <tr> \
+                    <th colspan="2">!xp_tracker usage</th> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--help</td> \
+                    <td><a style="background-color: #FFF400;"><b>--help</b></a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--add [character name]</td> \
+                    <td><a>Shows this help message.</a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--addtoken</td> \
+                    <td><a style="background-color: #FFF400;"><b>--addtoken</b></a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--list</td> \
+                    <td><a>Adds the selected non-NPC tokens to the XP Pool.</a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--remove [character name]</td> \
+                    <td><a style="background-color: #FFF400;"><b>--list</b></a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--removetoken</td> \
+                    <td><a>Lists the current members of the XP Pool and provides buttons to add XP or remove any one of them.</a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--xptotoken</td> \
+                    <td><a style="background-color: #FFF400;"><b>--removetoken</b></a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--xptopool</td> \
+                    <td><a>Removes the selected non-NPC tokens to the XP Pool.</a></td> \
                 </tr> \
                 <tr> \
-                    <td style="text-indent: 2em;">--xpfromtoken</td> \
+                    <td><a style="background-color: #FFF400;"><b>--xptotoken [XP]</b></a></td> \
+                </tr> \
+                <tr> \
+                    <td><a>The XP value provided will be split equally between the selected non-NPC Characters.</a></td> \
+                </tr> \
+                <tr> \
+                    <td><a style="background-color: #FFF400;"><b>--xptopool [XP]</b></a></td> \
+                </tr> \
+                <tr> \
+                    <td><a>The XP value provided will be split equally between the members of the XP Pool.</a></td> \
+                </tr> \
+                <tr> \
+                    <td><a style="background-color: #FFF400;"><b>--xpfromtoken</b></a></td> \
+                </tr> \
+                <tr> \
+                    <td><a>The XP value of the selected tokens will be split equally between the members of the XP Pool.</a></td> \
                 </tr> \
             </tbody> \
-        </table>';
-    log(output_msg);
+        </table> \
+        </div>';
     SendChat(output_msg);
 }
 
@@ -793,7 +821,6 @@ WriteToHandoutLog = function (output_msg) {
         if (Notes.indexOf('</tbody></table>')) {
             Notes = Notes.slice(0, Notes.indexOf('</tbody></table>'));
         }
-        log('WriteToHandoutLog:Notes:' + Notes);
         Notes = Notes + '<tr><td>' + GetTimeStamp() + '</td><td>' + output_msg + '</td></tr></tbody></table>';
 
         setTimeout(function () {
