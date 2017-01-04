@@ -1,7 +1,7 @@
 'use strict';
 
 // Current Vision of the XP_Tracker API.
-var CurrVersion = '0.4.1';
+var CurrVersion = '0.5b';
 
 // D&D 5e challenge rating values to experience value.
 var ChallengeRatingTable5e = {
