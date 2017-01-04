@@ -761,9 +761,6 @@ ShowHelp = function () {
                     <th colspan="2">!xp_tracker usage</th> \
                 </tr> \
                 <tr> \
-                    <td colspan="2">Allows a GM to select a one or a group of tokens and add them to a XP Pool.  You can then add XP to the pool which will update the character sheets and in form you when they level up.</td> \
-                </tr> \
-                <tr> \
                     <td><a style="background-color: #FFF400;"><b>--help</b></a></td> \
                 </tr> \
                 <tr> \
