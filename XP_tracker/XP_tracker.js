@@ -1,7 +1,7 @@
 'use strict';
 
 // Current Vision of the XP_Tracker API.
-var CurrVersion = '0.5b';
+var CurrVersion = '0.5.1b';
 
 // D&D 5e challenge rating values to experience value.
 var ChallengeRatingTable5e = {
@@ -649,14 +649,14 @@ IfAttrExists = function (id, AttrName) {
 // characters are not NPC but if it finds a known Attribute that denotes it as a NPC if returns true
 //  Input: String (Id {Roll20 Object Id String})
 //  Output: Boolean (true if the character is an NPC. else false)
-IsNPC = function (Charid) {
+IsNPC = function (CharID) {
     var AttrbutesToSearchFor = ['is_npc', 'npc'],
     Obj,
     result = false;
 
     AttrbutesToSearchFor.forEach(function (AttrName) {
         if (IfAttrExists(CharID, AttrName)) {
-            Obj = GetAttrObjectByName(Charid, AttrName);
+            Obj = GetAttrObjectByName(CharID, AttrName);
             if (Obj.attributes.current == 1) {
                 result = true;
             }
