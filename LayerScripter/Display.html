@@ -1,0 +1,154 @@
+﻿<style type="text/css">
+    div.outer {
+        background: #fff;
+        border: solid 1px #000;
+        border-radius: 5px;
+        font-weight: bold;
+        margin-bottom: 1em;
+        overflow: hidden;
+    }
+
+    div.inner {
+        background: #000;
+        color: #fff;
+        text-align: center;
+    }
+    dix.left {
+        text-align: left;
+    }
+    table {
+        border: solid 1px #000;
+        width: 100%;
+    }
+    tr.top {
+        border-top: solid 1px #000;
+        border-left: solid 1px #000;
+        border-right: solid 1px #000;
+    }
+    tr.middle {
+        border-left: solid 1px #000;
+        border-right: solid 1px #000;
+    }
+    tr.botton {
+         border-bottom: solid 1px #000;
+         border-left: solid 1px #000;
+         border-right: solid 1px #000;
+    }
+    td.text {
+        font-size: 0.8em; 
+        text-align: left;
+    }
+    td.button {
+        text-align: right;
+        width: 40px;
+    }
+    li {
+        padding: 10px; 
+        list-style-type: decimal;
+    }
+    a.greembutton {
+        font-size: 8px;
+        text-align: center;
+        width: 40px;
+        height: 13px;
+        margin: -5px 0 0 0;
+        padding: 0 0;
+        border-radius: 10px;
+        border-color: #000000;
+        white-space: nowrap;
+        background-color: #028003;
+    }
+    a.redbutton {
+         font-size: 8px;
+         text-align: center;
+         width: 50px;
+         height: 12px;
+         margin: -5px 0 0 0;
+         padding: 0 0;
+         border-radius: 10px;
+         border-color: #000000;
+         white-space: nowrap;
+         background-color: #FF0000;
+    }
+
+</style>
+<div style="background: #fff; border: solid 1px #000; border-radius: 5px; font-weight: bold; margin-bottom: 1em; overflow: hidden;">
+    <div style="background: #000; color: #fff; text-align: center;">
+        Layer Scripter Button List
+    </div>
+    <div style="text-align: left;">
+        <table>
+            <tbody>
+                <tr class="top">
+                    <td class="text">
+                        Button Name 1
+                    </td>
+                    <td class="button">
+                        <a class="greembutton" href="!LayerScripter --ListActions">Less</a>
+                    </td>
+                    <td class="button">
+                        <a class="redbutton" href="!LayerScripter --RemoveButton">Remove</a>
+                    </td>
+                </tr>
+                <tr class="middle">
+                    <td class="text">
+                        <ul>
+                            <li value="1">Action Name 1</li>
+                        </ul>
+                    </td>
+                    <td class="button">
+                        <a class="greembutton" href="!LayerScripter --ListActions">Less</a>
+                    </td>
+                    <td class="button">
+                        <a class="redbutton" href="!LayerScripter --RemoveButton">Remove</a>
+                    </td>
+                </tr>
+                <tr class="middle">
+                    <td>
+                        <a style="font-size: 0.8em ; text-align: left; padding: 10px">Type:</a>
+                    </td>
+                    <td class="text">
+                        Token
+                    </td>
+                    <td class="text"></td>
+                </tr>
+                <tr class="middle">
+                    <td>
+                        <a style="font-size: 0.8em ; text-align: left; padding: 10px">Starting Layer:</a>
+                    </td>
+                    <td class="text">
+                        gmlayer
+                    </td>
+                    <td class="text"></td>
+                </tr>
+                <tr class="middle">
+                    <td>
+                        <a style="font-size: 0.8em ; text-align: left; padding: 10px">New Layer:</a>
+                    </td>
+                    <td class="text">
+                        object
+                    </td>
+                    <td class="text">
+                        <a class="redbutton" href="!LayerScripter --RemoveButton">Change</a>
+                    </td>
+                </tr>
+                <tr class="middle">
+                    <td style="font-size: 0.8em ; text-align: left; padding: 10px">
+                        <ul><li value="2">Action Name 2</li></ul>
+                    </td>
+                    <td class="button">
+                        <a class="greembutton" href="!LayerScripter --ListActions">More</a>
+                    </td>
+                    <td class="button">
+                        <a class="redbutton" href="!LayerScripter --RemoveButton">Remove</a>
+                    </td>
+                </tr>
+                <tr class="botton">
+                    <td colspan=3 style="font-size: 0.8em ; text-align: left; padding: 10px">
+                        <a class="greenbutton" href="!LayerScripter --AddAction">Add Action</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
