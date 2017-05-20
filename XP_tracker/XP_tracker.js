@@ -518,7 +518,7 @@ var XP_Tracker = XP_Tracker || (function () {
         if ((IsMember(CharId)) && (CharObj.attributes.archived)) {
 
             if (state.XP_Tracker.Config.RemoveArchived) {
-                RemoveIdFromXPPool(CharId);
+                RemoveIdsFromXPPool(CharId);
             }
             else {
                 CreateButton(CharName + Trans.Arcived_Character_Message, Trans.Yes_Button_Name, COMMAND_REMOVE_FROM_POOL + ' ' + CharId);
