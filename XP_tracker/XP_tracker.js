@@ -76,6 +76,13 @@ var XP_Tracker = XP_Tracker || (function () {
         COMMAND_REMOVE_CHARACTER_LIST = '!xp_tracker_remove_character_list', //
         COMMAND_SHOW_HELP = '!xp_tracker_help', //
         COMMAND_SHOW_SETTINGS = '!xp_tracker_settings', //
+        COMMAND_TOGGLE_TRACK_IN_HANDOUT = '!xp_tracker_toggle_track_in_handout',
+        COMMAND_TOGGLE_UPDATE_CHARACTER_SHEET = '!xp_tracker_toggle_update_character_sheet',
+        COMMAND_TOGGLE_TRACK_BY_SESSION = '!xp_tracker_toggle_track_by_session',
+        COMMAND_TOGGLE_REMOVE_ARCHIVED = '!xp_tracker_toggle_remove_archived',
+        COMMAND_RENAME_HANDOUT = '!xo_tracker_rename_handout',
+
+        HANDOUT_JOURNAL_LINK = 'http://journal.roll20.net/handout/',
 
         ChallengeRatingTable5e = { // D&D 5e challenge rating values to experience value.
             '0': 0, '1/8': 25, '1/4': 50, '1/2': 100, '1': 200, '2': 450,
@@ -124,6 +131,10 @@ var XP_Tracker = XP_Tracker || (function () {
             a_setting: { 'color': 'black', 'font-size': '10px', 'text-align': 'center', 'width': '50px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': 'yellow' },
             a_redbutton: { 'font-size': '10px', 'text-align': 'center', 'width': '40px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#FF0000' },
             a_help: { 'font-size': '1.4ex', 'line-height': '1.8ex', 'font-family': 'sans-serif', 'vertical-align': 'middle', 'font-weight': 'bold', 'text-align': 'center', 'text-decoration': 'none', 'display': 'inline-block', 'width': '1.8ex', 'height': '1.8ex', 'border-radius': '1.2ex', 'margin-right': '4px', 'padding': '1px', 'color': 'white', 'background': 'Blue', 'border': 'thin solid blue', 'font color': 'white' },
+            a_enabled: { 'font-size': '10px', 'text-align': 'center', 'width': '40px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
+            a_disabled: { 'font-size': '10px', 'text-align': 'center', 'width': '40px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': 'red' },
+            a_renamebutton: { 'font-size': '10px', 'text-align': 'center', 'width': '100px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
+            a_backbutton: { 'font-size': '10px', 'text-align': 'center', 'width': '50px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
         },
         Trans = {
             TrackInHandout: 'Track in Handout',
@@ -153,7 +164,7 @@ var XP_Tracker = XP_Tracker || (function () {
             Pool2_Header: 'Characters in the XP Pool',
             Character_Sheet_Message: 'Select Character Sheet',
             Select_Button_Name: 'Select',
-            Character_Sheet_Marco: '!xp_tracker_setcharactersheet ?{Character Sheet|' + Object.keys(SupportedCharacterSheetLayouts).join('|') + '}',
+            Character_Sheet_Marco: COMMAND_SET_CHARACTER_SHEET + ' ?{Character Sheet|' + Object.keys(SupportedCharacterSheetLayouts).join('|') + '}',
             Arcived_Character_Message: ' has been archived.  Should they be removed from the XP pool?',
             Yes_Button_Name: 'Yes',
             No_Characters_Add_To_Pool: 'No Characters were added to the XP Pool because no non-NPC characters were found.',
@@ -174,6 +185,25 @@ var XP_Tracker = XP_Tracker || (function () {
             Help_Button_Title: 'Show Help',
             Setting_Button: 'Setting',
             Setting_Button_Title: 'Click to open setting menu.',
+            Setting_Page_Header: 'Setting Page',
+            Enabled: 'Enabled',
+            Disabled: 'Disabled',
+            Track_In_Handout_Name: 'Track XP in handout',
+            Track_In_Handout_Help: 'When enabled all changes in XP will be tracked in the ' + state.XP_Tracker.Config.HandoutName + ' handout.',
+            Handout_Name: 'Handout Name',
+            Rename_Handout_Name: 'Rename Handout',
+            Rename_Handout_Marco: COMMAND_RENAME_HANDOUT + ' ?{Handout Name}',
+            Rename_Handout_Help: 'Rename the handout that is used to log XP changes.',
+            Update_Character_Sheet_Name: 'Update character XP',
+            Update_Character_Sheet_Help: 'When enabled XP that is added to the pool will also update character sheets (Only works on support character sheets.) If the Track By Session is enable the sheets will be updated when you click End of Session',
+            Track_By_Session_Name: 'Track XP for session',
+            Track_By_Session_Help: 'When enabled any XP added to the Pool will be stored until the session is ended.',
+            Remove_Archived_Name: 'Remove Archive',
+            Remove_Archived_Help: 'When enabled the script will automatically remove characters from the pool if they are archived. If disabled the GM(s) will be asked.',
+            Current_Sheet_Name: 'Current Character Sheet',
+            Change_Sheet_Button: 'Change Sheet',
+            Change_Sheet_Help: 'Sheet the character sheet template your campaign is using.',
+            Back_Button: 'Back',
         };
 
     // #endregion
@@ -401,7 +431,8 @@ var XP_Tracker = XP_Tracker || (function () {
         var CharId,
             CharSheet,
             XP,
-            arg;
+            arg,
+            HandoutName;
 
         if ((Roll20_msg.type == "api") && (playerIsGM(Roll20_msg.playerid))) {
             if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_SET_CHARACTER_SHEET) === 0) {
@@ -442,6 +473,27 @@ var XP_Tracker = XP_Tracker || (function () {
             }
             else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_SHOW_HELP) === 0) {
                 ShowHelp();
+            }
+            else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_TOGGLE_TRACK_IN_HANDOUT) === 0) {
+                state.XP_Tracker.Config.TrackInHandout = ToggleConfiguration(state.XP_Tracker.Config.TrackInHandout);
+                ShowSettings();
+            }
+            else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_TOGGLE_UPDATE_CHARACTER_SHEET) === 0) {
+                state.XP_Tracker.Config.UpdateCharacterSheet = ToggleConfiguration(state.XP_Tracker.Config.UpdateCharacterSheet);
+                ShowSettings();
+            }
+            else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_TOGGLE_TRACK_BY_SESSION) === 0) {
+                state.XP_Tracker.Config.TrackBySession = ToggleConfiguration(state.XP_Tracker.Config.TrackBySession);
+                ShowSettings();
+            }
+            else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_TOGGLE_REMOVE_ARCHIVED) === 0) {
+                state.XP_Tracker.Config.RemoveArchived = ToggleConfiguration(state.XP_Tracker.Config.RemoveArchived);
+                ShowSettings();
+            }
+            else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_RENAME_HANDOUT) === 0) {
+                HandoutName = Roll20_msg.content.substr(Roll20_msg.content.indexOf(' ') + 1);
+                RenameHandout(HandoutName);
+                ShowSettings();
             }
             else {
                 DisplayPool();
@@ -916,6 +968,15 @@ var XP_Tracker = XP_Tracker || (function () {
         }
     };
 
+    // Returns the id of the XP_Tracker Log handout.
+    //  Input: None
+    //  Output: String (Roll20 Object Id String)
+    var GetHandoutID = function GetHandoutID() {
+        var HandoutObj = GetObject('handout', state.XP_Tracker.Config.HandoutName);
+
+        return (HandoutObj.get('_id'));
+    }
+
     // This function will connect to the handout in found in state.XP_Tracker.Config.HandoutName or if it is not found it will call CreateHandoutLog () to create a new one
     //  Input: None
     //  Output: Roll20 Handout Object 
@@ -1246,6 +1307,17 @@ var XP_Tracker = XP_Tracker || (function () {
         RemoveIdsFromXPPool(GetTokenCharID(Roll20_msg));
     };
 
+    // This function will rename the handout used to track XP Changes
+    //  Input: String
+    //  Output: None
+    var RenameHandout = function RenameHandout(Name) {
+
+        var HandoutObj = GetHandout();
+
+        HandoutObj.set('name', Name);
+        state.XP_Tracker.Config.HandoutName = Name;
+    }
+
     //
     //
     //
@@ -1391,7 +1463,79 @@ var XP_Tracker = XP_Tracker || (function () {
     //  Output: None
     var ShowSettings = function ShowSettings() {
 
+        DebugMessage.apply(this, arguments);
+
+        var HTML = new HTMLScripter(),
+            CharIds = GetPoolMemberIDs(),
+            output_msg,
+            TableRow,
+            Button;
+
+        TableRow = HTML.build('td', Trans.Setting_Page_Header, { style: Style_CSS.td_header, colspan: '2' });
+        output_msg = HTML.build('tr', TableRow, { style: Style_CSS.tr });
+
+        TableRow = HTML.build('td', Trans.Track_In_Handout_Name, { style: Style_CSS.td_text, title: Trans.Track_In_Handout_Help }) + HTML.build('td', ToggleButton(state.XP_Tracker.Config.TrackInHandout, COMMAND_TOGGLE_TRACK_IN_HANDOUT), { style: Style_CSS.td_button, title: Trans.Track_In_Handout_Help });
+        output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr });
+
+        if (state.XP_Tracker.Config.TrackInHandout) {
+
+            TableRow = HTML.build('td', Trans.Handout_Name, { style: Style_CSS.td_text }) + HTML.build('td', HTML.build('a', '[' + state.XP_Tracker.Config.HandoutName + ']', { href: HANDOUT_JOURNAL_LINK + GetHandoutID () }), { style: Style_CSS.td_right });
+            output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_top });
+            TableRow = HTML.build('td', HTML.build('a', Trans.Rename_Handout_Name, { style: Style_CSS.a_renamebutton, href: Trans.Rename_Handout_Marco, title: Trans.Rename_Handout_Help }), { style: Style_CSS.td_button, colspan: '2', title: Trans.Rename_Handout_Help });
+            output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_bottom });
+
+        }
+
+        TableRow = HTML.build('td', Trans.Update_Character_Sheet_Name, { style: Style_CSS.td_text, title: Trans.Update_Character_Sheet_Help }) + HTML.build('td', ToggleButton(state.XP_Tracker.Config.UpdateCharacterSheet, COMMAND_TOGGLE_UPDATE_CHARACTER_SHEET), { style: Style_CSS.td_button, title: Trans.Update_Character_Sheet_Help });
+        output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr });
+
+        if (state.XP_Tracker.Config.UpdateCharacterSheet) {
+
+            TableRow = HTML.build('td', Trans.Current_Sheet_Name, { style: Style_CSS.td_text }) + HTML.build('td', HTML.build('a', state.XP_Tracker.Config.CharSheet.Name, { }), { style: Style_CSS.td_right });
+            output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_top });
+            TableRow = HTML.build('td', HTML.build('a', Trans.Change_Sheet_Button, { style: Style_CSS.a_renamebutton, href: Trans.Character_Sheet_Marco, title: Trans.Change_Sheet_Help }), { style: Style_CSS.td_button, colspan: '2', title: Trans.Change_Sheet_Help });
+            output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_bottom });
+
+        }
+
+        TableRow = HTML.build('td', Trans.Track_By_Session_Name, { style: Style_CSS.td_text, title: Trans.Track_By_Session_Help }) + HTML.build('td', ToggleButton(state.XP_Tracker.Config.TrackBySession, COMMAND_TOGGLE_TRACK_BY_SESSION), { style: Style_CSS.td_button, title: Trans.Track_By_Session_Help });
+        output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr });
+
+        TableRow = HTML.build('td', Trans.Remove_Archived_Name, { style: Style_CSS.td_text, title: Trans.Remove_Archived_Help }) + HTML.build('td', ToggleButton(state.XP_Tracker.Config.RemoveArchived, COMMAND_TOGGLE_REMOVE_ARCHIVED), { style: Style_CSS.td_button, title: Trans.Remove_Archived_Help });
+        output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr });
+
+        TableRow = HTML.build('td', HTML.build('a', Trans.Back_Button, { style: Style_CSS.a_backbutton, href: COMMAND_BASE }), { style: Style_CSS.td_button, colspan: '2' });
+        output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_bottom });
+
+        output_msg = HTML.build('tbody', output_msg, {});
+        output_msg = HTML.build('table', output_msg, { style: Style_CSS.table });
+
+        output_msg = AddOutputHeader(output_msg);
+        SendChat(output_msg);
     };
+
+    //
+    //
+    //
+    var ToggleButton = function ToggleButton(Status, Link) {
+
+        var HTML = new HTMLScripter(),
+            output_msg;
+
+        if (Status) {
+            output_msg = HTML.build('a', Trans.Enabled, { style: Style_CSS.a_enabled, href: Link });
+        }
+        else {
+            output_msg = HTML.build('a', Trans.Disabled, { style: Style_CSS.a_disabled, href: Link });
+        }
+
+        return (output_msg);
+    }
+
+    var ToggleConfiguration = function ToggleConfiguration(Bool_Value) {
+        log('Bool_Value = ' + Bool_Value);
+        return (!Bool_Value);
+    }
 
     // This function will append to the handout log
     //  Input: String = message to send
