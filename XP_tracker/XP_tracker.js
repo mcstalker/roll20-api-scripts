@@ -80,7 +80,8 @@ var XP_Tracker = XP_Tracker || (function () {
         COMMAND_TOGGLE_UPDATE_CHARACTER_SHEET = '!xp_tracker_toggle_update_character_sheet',
         COMMAND_TOGGLE_TRACK_BY_SESSION = '!xp_tracker_toggle_track_by_session',
         COMMAND_TOGGLE_REMOVE_ARCHIVED = '!xp_tracker_toggle_remove_archived',
-        COMMAND_RENAME_HANDOUT = '!xo_tracker_rename_handout',
+        COMMAND_RENAME_HANDOUT = '!xp_tracker_rename_handout',
+        COMMAND_END_SESSION = '!xp_tracker_end_session',
 
         HANDOUT_JOURNAL_LINK = 'http://journal.roll20.net/handout/',
 
@@ -111,6 +112,7 @@ var XP_Tracker = XP_Tracker || (function () {
             table: { 'border': 'solid 1px #000', 'width': '100%', 'table-layout': 'fixed' },
             tr: { 'border': 'solid 1px #000' },
             tr_top: { 'border-style': 'solid', 'border-width': '1px 1px 0px 1px', 'border-color': '#000' },
+            tr_middle: { 'border-style': 'solid', 'border-width': '0px 1px 0px 1px', 'border-color': '#000' },
             tr_bottom: { 'border-style': 'solid', 'border-width': '0px 1px 1px 1px', 'border-color': '#000' },
             td: { 'font-size': '0.8em', 'text-align': 'left', 'padding-left': '12px' },
             td_header: { 'font-size': '0.8em', 'text-align': 'center', 'font-weight': 'bold' },
@@ -119,6 +121,8 @@ var XP_Tracker = XP_Tracker || (function () {
             td_action_detail_text: { 'font-size': '0.8em', 'text-align': 'left', 'padding-left': '24px' },
             td_text: { 'font-size': '0.8em', 'text-align': 'left' },
             td_button: { 'text-align': 'right', 'width': '50px' },
+            td_end_session_button: { 'text-align': 'right', 'width': '75px' },
+            td_add_selected_token_button: { 'text-align': 'right', 'width': '75px' },
             td_addaction: { 'text-align': 'center', 'width': '100%' },
             td_addbutton: { 'text-align': 'left', 'border-top': 'solid 1px #000', 'width': '100%' },
             td_more_less_button: { 'text-align': 'left', 'width': '50px' },
@@ -128,6 +132,8 @@ var XP_Tracker = XP_Tracker || (function () {
             a_addaction: { 'font-size': '10px', 'text-align': 'center', 'width': '75px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
             a_greembutton: { 'font-size': '10px', 'text-align': 'center', 'width': '40px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
             a_addbutton: { 'font-size': '10px', 'text-align': 'center', 'width': '50px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
+            a_end_session_button: { 'font-size': '10px', 'text-align': 'center', 'width': '75px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
+            a_add_selected_token_button: { 'font-size': '10px', 'text-align': 'center', 'width': '75px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#028003' },
             a_setting: { 'color': 'black', 'font-size': '10px', 'text-align': 'center', 'width': '50px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': 'yellow' },
             a_redbutton: { 'font-size': '10px', 'text-align': 'center', 'width': '40px', 'height': '13px', 'margin': '-5px 0 0 0', 'padding': '0 0 0 0', 'border-radius': '10px', 'border-color': '#000000', 'white-space': 'nowrap', 'background-color': '#FF0000' },
             a_help: { 'font-size': '1.4ex', 'line-height': '1.8ex', 'font-family': 'sans-serif', 'vertical-align': 'middle', 'font-weight': 'bold', 'text-align': 'center', 'text-decoration': 'none', 'display': 'inline-block', 'width': '1.8ex', 'height': '1.8ex', 'border-radius': '1.2ex', 'margin-right': '4px', 'padding': '1px', 'color': 'white', 'background': 'Blue', 'border': 'thin solid blue', 'font color': 'white' },
@@ -176,7 +182,7 @@ var XP_Tracker = XP_Tracker || (function () {
             Multi_Player_Adv: ' have ',
             Level_Up: 'leveled up',
             Received: 'received ',
-            XP_Each_Message: ' experience points each',
+            XP_Each_Message: ' experience points',
             And: ' and ',
             Handout_Default_Name: 'XP_Tracker Log',
             Macro_Token_to_Pool_Name: 'SelectedTokensXPtoPool',
@@ -204,6 +210,10 @@ var XP_Tracker = XP_Tracker || (function () {
             Change_Sheet_Button: 'Change Sheet',
             Change_Sheet_Help: 'Sheet the character sheet template your campaign is using.',
             Back_Button: 'Back',
+            Session_XP_Header: 'Session XP:',
+            Open_Session: 'XP from the last session has not been sent to the characters.  Would you like to send it now?',
+            End_Sessiom_Button_Name: 'End Session',
+            End_Session_Button_Help: 'Ends the session and sends XP to the character if Update character is enabled.',
         };
 
     // #endregion
@@ -289,17 +299,21 @@ var XP_Tracker = XP_Tracker || (function () {
         AddIdsToXPPool(GetTokenCharID(Roll20_msg));
     };
 
+    //
+    //
+    //
+    var AddXPtoCharSheet = function AddXPtoCharSheet(CharId, XP) {
+        if (state.XP_Tracker.Config.UpdateCharacterSheet) {
+            SetAttrCurrentValueByName(CharId, state.XP_Tracker.Config.CharSheet.PC_XP_Attr, state.XP_Tracker.PoolIDs[CharId].CurrXP);
+        }
+    }
+
     // Add XP to one or more character Ids.
     //  Input: Number(xp), Array of Strings (Ids)
     //  Output: Boolean true on OK false on error
     var AddXPToIds = function AddXPToIds(XP, CharIds) {
 
         DebugMessage.apply(this, arguments);
-
-        var Log,
-            Players_Name = [],
-            Leveled_Up = [],
-            HTML = new HTMLScripter();
 
         if (!(CharIds = CheckIdsVariable(CharIds))) {
             SendChat(Trans.Add_XP_To_Ids_No_ID_Error);
@@ -309,48 +323,19 @@ var XP_Tracker = XP_Tracker || (function () {
         if (CharIds.length > 0) {
             CharIds.forEach(function (CharId) {
 
-                Players_Name.push(state.XP_Tracker.PoolIDs[CharId].Name);
-
-                state.XP_Tracker.PoolIDs[CharId].CurrXP = parseInt(XP) + parseInt(state.XP_Tracker.PoolIDs[CharId].CurrXP);
-
                 if (state.XP_Tracker.Config.TrackBySession) {
                     state.XP_Tracker.PoolIDs[CharId].SessionXP = parseInt(XP) + parseInt(state.XP_Tracker.PoolIDs[CharId].SessionXP);
-                }
-                else if (state.XP_Tracker.Config.UpdateCharacterSheet) {
-                    SetAttrCurrentValueByName(CharId, state.XP_Tracker.Config.CharSheet.PC_XP_Attr, state.XP_Tracker.PoolIDs[CharId].CurrXP);
-                    if (state.XP_Tracker.PoolIDs[CharId].CurrXP >= state.XP_Tracker.PoolIDs[CharId].XP_Next_Level_Attr) {
-                        Leveled_Up.push(state.XP_Tracker.PoolIDs[CharId].Name);
+                    if (state.XP_Tracker.PoolIDs[CharId].SessionXP) {
+                        state.XP_Tracker.Config.SessionOpen = true;
                     }
+                }
+                else {
+                    state.XP_Tracker.PoolIDs[CharId].CurrXP = parseInt(XP) + parseInt(state.XP_Tracker.PoolIDs[CharId].CurrXP);
+                    AddXPtoCharSheet(CharId, state.XP_Tracker.PoolIDs[CharId].CurrXP);
                 }
             });
         }
 
-        //output_msg = CurrXP[CharIds].name + ' as received ' + xp + ' experience points for a total of ' + (parseInt(CurrXP[CharIds].XP) + parseInt(xp)) + '.';
-        //if (parseInt(CurrXP[CharIds].XP) + parseInt(xp) >= CurrXP[CharIds].XP_Next_Level_Attr) {
-        //    output_msg += ' and has <span style="background-color: initial; color: rgb(0, 0, 0); font-size: 18px; font-weight: bold;">leveled up</span>';
-        //};
-
-        if (Players_Name.length) {
-            if (Players_Name.length == 1) {
-                Log = Players_Name[0] + Trans.Single_Player_Adv;
-            }
-            else if (Players_Name.length > 1) {
-                Log = Players_Name.join(', ') + Trans.Multi_Player_Adv;
-            }
-
-            Log += Trans.Received + XP + Trans.XP_Each_Message;
-
-            if (Leveled_Up.length == 1) {
-                Log += Trans.And + Players_Name[0] + Trans.Single_Player_Adv + HTML.build('span', Trans.Level_Up, {
-                    style: Style_CSS.span
-                });
-            }
-            else if (Leveled_Up.length > 1) {
-                Log += Trans.And + Players_Name.join(', ') + Trans.Multi_Player_Adv + HTML.build('span', Trans.Level_Up, { style: Style_CSS.span });
-            }
-            Log += '.';
-        }
-        ReportLog(Log);
     };
 
     // This function takes a block of XP and divides equally across all members of the XP pool. 
@@ -364,6 +349,9 @@ var XP_Tracker = XP_Tracker || (function () {
 
         if (CharIds.length !== 0) {
             AddXPToIds(Math.ceil(xp / CharIds.length), CharIds);
+            if (!state.XP_Tracker.Config.TrackBySession) {
+                GenerateReport('', Math.ceil(xp / CharIds.length), CharIds);
+            }            
         }
         else { return; }
 
@@ -407,6 +395,9 @@ var XP_Tracker = XP_Tracker || (function () {
 
         if (ids.length !== 0) {
             AddXPToIds(Math.ceil(xp / ids.length), ids);
+            if (!state.XP_Tracker.Config.TrackBySession) {
+                GenerateReport('', Math.ceil(xp / ids.length), CharIds);
+            }
         }
         else { return; }
     };
@@ -434,7 +425,7 @@ var XP_Tracker = XP_Tracker || (function () {
             arg,
             HandoutName;
 
-        if ((Roll20_msg.type == "api") && (playerIsGM(Roll20_msg.playerid))) {
+        if ((Roll20_msg.type == "api") && (playerIsGM(Roll20_msg.playerid)) && (Roll20_msg.content.toLowerCase().indexOf(COMMAND_BASE) === 0)) {
             if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_SET_CHARACTER_SHEET) === 0) {
                 CharSheet = Roll20_msg.content.substr(Roll20_msg.content.indexOf(' ') + 1);
                 SetCharacterSheet(CharSheet);
@@ -444,6 +435,9 @@ var XP_Tracker = XP_Tracker || (function () {
                 XP = arg.splice(1, 1)[0];
                 CharId = arg.splice(1, 1)[0];
                 AddXPToIds(XP, CharId);
+                if (!state.XP_Tracker.Config.TrackBySession) {
+                    GenerateReport('', XP, CharId);
+                }
                 DisplayPool();
             }
             else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_ADD_TOKEN_TO_POOL) === 0) {
@@ -483,7 +477,7 @@ var XP_Tracker = XP_Tracker || (function () {
                 ShowSettings();
             }
             else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_TOGGLE_TRACK_BY_SESSION) === 0) {
-                state.XP_Tracker.Config.TrackBySession = ToggleConfiguration(state.XP_Tracker.Config.TrackBySession);
+                state.XP_Tracker.Config.TrackBySession = ToggleTrackBySession(state.XP_Tracker.Config.TrackBySession);
                 ShowSettings();
             }
             else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_TOGGLE_REMOVE_ARCHIVED) === 0) {
@@ -494,6 +488,9 @@ var XP_Tracker = XP_Tracker || (function () {
                 HandoutName = Roll20_msg.content.substr(Roll20_msg.content.indexOf(' ') + 1);
                 RenameHandout(HandoutName);
                 ShowSettings();
+            }
+            else if (Roll20_msg.content.toLowerCase().indexOf(COMMAND_END_SESSION) === 0) {
+                EndSession();
             }
             else {
                 DisplayPool();
@@ -526,9 +523,25 @@ var XP_Tracker = XP_Tracker || (function () {
         }
     };
 
-    //
-    //
-    //
+    // This function checks if a CharId has leveled up.  
+    //  Input: String = Containing one Roll20 Character ID
+    //  Output: True if id as leveled up.
+    var CheckForLevelUp = function CheckForLevelUp(CharId) {
+        log('CheckForLevelUp::CharId::' + CharId);
+        log('CheckForLevelUp::CurrXP::' + state.XP_Tracker.PoolIDs[CharId].CurrXP);
+        log('CheckForLevelUp::XPNextLevel::' + state.XP_Tracker.PoolIDs[CharId].XPNextLevel);
+        if (state.XP_Tracker.PoolIDs[CharId].CurrXP >= state.XP_Tracker.PoolIDs[CharId].XPNextLevel) {
+            log('CheckForLevelUp::If::TRUE');
+            state.XP_Tracker.PoolIDs[CharId].XPNextLevel = GetXPNextLevel(state.XP_Tracker.PoolIDs[CharId].CurrXP);
+            return (true);
+        }
+        log('CheckForLevelUp::Not of If');
+        return (false);
+    };
+
+    // The function will check the Ids variable to see if it is null, a string or a list and it will return false if it is null or a list.
+    //  Input: String or List of Strings = Containing one Roll20 Character ID
+    //  Output: False if Ids is null else it return a list of ids. 
     var CheckIdsVariable = function CheckIdsVariable(Ids) {
 
         DebugMessage.apply(this, arguments);
@@ -549,7 +562,7 @@ var XP_Tracker = XP_Tracker || (function () {
 
     // This function will check to see if the API has been installed correctly.  
     //  Input: None
-    //  Output: 
+    //  Output: None
     var CheckInstaller = function CheckInstall() {
 
         DebugMessage(arguments);
@@ -559,6 +572,9 @@ var XP_Tracker = XP_Tracker || (function () {
         }
         GetMacro();
         GetHandout();
+        if (state.XP_Tracker.Config.SessionOpen) {
+            SessionOpenAtStart ();
+        }
     };
 
     // This function will check the members of the pool to confirm that the characters have not been deleted or archived.  
@@ -651,12 +667,15 @@ var XP_Tracker = XP_Tracker || (function () {
                     state.XP_Tracker.PoolIDs[id].XPNextLevel = CharDate.XPNextLevel;
                 });
             }
+            if (typeof state.XP_Tracker.Config.SessionOpen === 'undefined') {
+                state.XP_Tracker.Config.SessionOpen = false;
+            }
         }
     };
 
-    //
-    //
-    //
+    // This function generates a message to the GM.  If the ButtonText is provided a button will be added.
+    //  Input: Message, ButtonText, Link
+    //  Output: None
     var CreateButton = function CreateButton(Message, ButtonText, Link) {
 
         DebugMessage.apply(this, arguments);
@@ -807,7 +826,12 @@ var XP_Tracker = XP_Tracker || (function () {
             CharIds = GetPoolMemberIDs(),
             output_msg,
             TableRow,
-            Button;
+            Button,
+            CharacterNameRowSpan = 2;
+
+        if (state.XP_Tracker.Config.TrackBySession) {
+            CharacterNameRowSpan = 3;
+        };
 
         TableRow = HTML.build('td', Trans.Pool_Header, { style: Style_CSS.td_header, colspan: '3' });
 
@@ -827,11 +851,18 @@ var XP_Tracker = XP_Tracker || (function () {
         if (CharIds.length > 0) {
             CharIds.forEach(function (CharId) {
 
-                TableRow = HTML.build('td', state.XP_Tracker.PoolIDs[CharId].Name, { style: Style_CSS.td_left, rowspan: '2' }) +
+                TableRow = HTML.build('td', state.XP_Tracker.PoolIDs[CharId].Name, { style: Style_CSS.td_left, rowspan: CharacterNameRowSpan }) +
                     HTML.build('td', state.XP_Tracker.PoolIDs[CharId].CurrXP, { style: Style_CSS.td_right }) +
                     HTML.build('td', state.XP_Tracker.PoolIDs[CharId].XPNextLevel, { style: Style_CSS.td_right });
 
                 output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_top });
+
+                if (state.XP_Tracker.Config.TrackBySession) {
+                    TableRow = HTML.build('td', Trans.Session_XP_Header, { style: Style_CSS.td_right }) +
+                        HTML.build('td', state.XP_Tracker.PoolIDs[CharId].SessionXP, { style: Style_CSS.td_right });
+
+                    output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_middle });
+                };
 
                 TableRow = HTML.build('td', HTML.build('a', Trans.Add_XP_Button_Nane, { style: Style_CSS.a_greembutton, href: COMMAND_ADD_XP_TO_ID + Trans.XP_Macro + CharId, title: Trans.Add_XP_Button_Help }), { style: Style_CSS.td_button}) +
                     HTML.build('td', HTML.build('a', Trans.Remove_Button_Nane, { style: Style_CSS.a_redbutton, href: COMMAND_REMOVE_FROM_POOL + ' ' + CharId, title: Trans.Remove_Button_Help }), { style: Style_CSS.td_button });
@@ -840,19 +871,64 @@ var XP_Tracker = XP_Tracker || (function () {
             });
         }
 
-        Button = HTML.build('a', Trans.Add_Selected_Token_Button_Name, { style: Style_CSS.a_addbutton, href: COMMAND_ADD_TOKEN_TO_POOL, title: Trans.Add_Selected_Token_Button_Help });
-        TableRow = HTML.build('td', Button, { style: Style_CSS.td_button });
+        Button = HTML.build('a', Trans.Add_Selected_Token_Button_Name, { style: Style_CSS.a_add_selected_token_button, href: COMMAND_ADD_TOKEN_TO_POOL, title: Trans.Add_Selected_Token_Button_Help });
+        TableRow = HTML.build('td', Button, { style: Style_CSS.td_add_selected_token_button });
         Button = HTML.build('a', '?', { style: Style_CSS.a_help, href: COMMAND_SHOW_HELP, title: Trans.Help_Button_Title });
         TableRow += HTML.build('td', Button, { style: Style_CSS.td_button });
         Button = HTML.build('a', Trans.Setting_Button, { style: Style_CSS.a_setting, href: COMMAND_SHOW_SETTINGS, title: Trans.Setting_Button_Title });
         TableRow += HTML.build('td', Button, { style: Style_CSS.td_button });
         
         output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_top });
+
+        if (state.XP_Tracker.Config.TrackBySession) {
+            Button = HTML.build('a', Trans.End_Sessiom_Button_Name, { style: Style_CSS.a_end_session_button, href: COMMAND_END_SESSION, title: Trans.End_Session_Button_Help });
+            TableRow = HTML.build('td', Button, { style: Style_CSS.td_end_session_button });
+            output_msg += HTML.build('tr', TableRow, { style: Style_CSS.tr_middle });
+        }
         output_msg = HTML.build('tbody', output_msg, {});
         output_msg = HTML.build('table', output_msg, { style: Style_CSS.table });
 
         output_msg = AddOutputHeader(output_msg);
         SendChat(output_msg);
+    };
+
+    // The function will send any XP stored in the SessionXP variables to the characters and clear the values.
+    //  Input: None
+    //  Output: None
+    var EndSession = function EndSession() {
+
+        var CharIds = GetPoolMemberIDs(),
+            Players_Report = {};
+
+        log('CharIds::' + CharIds);
+
+        if (!state.XP_Tracker.Config.SessionOpen) {
+            return (false);
+        };
+
+        state.XP_Tracker.Config.SessionOpen = false;
+
+        if (CharIds.length > 0) {
+            CharIds.forEach(function (CharId) {
+                if (state.XP_Tracker.PoolIDs[CharId].SessionXP) {
+
+                    state.XP_Tracker.PoolIDs[CharId].CurrXP = parseInt(state.XP_Tracker.PoolIDs[CharId].SessionXP) + parseInt(state.XP_Tracker.PoolIDs[CharId].CurrXP);
+
+                    if (!(state.XP_Tracker.PoolIDs[CharId].SessionXP in Players_Report)) {
+                        Players_Report[state.XP_Tracker.PoolIDs[CharId].SessionXP] = [];
+                    }
+                    Players_Report[state.XP_Tracker.PoolIDs[CharId].SessionXP].push(CharId);
+
+                    state.XP_Tracker.PoolIDs[CharId].SessionXP = 0;
+
+                    AddXPtoCharSheet(CharId, state.XP_Tracker.PoolIDs[CharId].CurrXP);
+                }
+            });
+
+            for (var key in Players_Report) {
+                GenerateReport('', key, Players_Report[key]);
+            }
+        }
     };
 
     // Registers Roll20 event handlers.
@@ -866,6 +942,57 @@ var XP_Tracker = XP_Tracker || (function () {
         on("change:character:archived", CharacterAchived);
 
         //DebugEnalbed && DebugMessage('Exiting function');
+    };
+
+    //
+    //
+    //
+    var GenerateReport = function GenerateReport(Message, XP, CharIds) {
+
+        var Report,
+            Players_Name = [],
+            Leveled_Up = [],
+            HTML = new HTMLScripter();
+
+        if (!(CharIds = CheckIdsVariable(CharIds))) {
+            SendChat(Trans.Add_XP_To_Ids_No_ID_Error);
+            return (false);
+        }
+
+        if (CharIds.length > 0) {
+            CharIds.forEach(function (CharId) {
+
+                Players_Name.push(state.XP_Tracker.PoolIDs[CharId].Name);
+
+                if (CheckForLevelUp(CharId)) {
+                    Leveled_Up.push(state.XP_Tracker.PoolIDs[CharId].Name);
+                }
+            });
+        }
+
+        if ((typeof Players_Name !== 'undefined') && (Players_Name.length)) {
+            if (Players_Name.length == 1) {
+                Report = Players_Name[0] + Trans.Single_Player_Adv;
+            }
+            else if (Players_Name.length > 1) {
+                Report = Players_Name.join(', ') + Trans.Multi_Player_Adv;
+            }
+
+            Report += Trans.Received + XP + Trans.XP_Each_Message;
+
+            if (Leveled_Up.length == 1) {
+                Report += Trans.And + Players_Name[0] + Trans.Single_Player_Adv + HTML.build('span', Trans.Level_Up, {
+                    style: Style_CSS.span
+                });
+            }
+            else if (Leveled_Up.length > 1) {
+                Report += Trans.And + Players_Name.join(', ') + Trans.Multi_Player_Adv + HTML.build('span', Trans.Level_Up, { style: Style_CSS.span });
+            }
+            Report += '.';
+        }
+//        if ((!state.XP_Tracker.Config.TrackBySession) || (!state.XP_Tracker.Config.SessionOpen)) {
+            ReportLog(Report);
+//        }
     };
 
     // The function finds attributes object by the object Id and the attributes name.
@@ -1323,6 +1450,12 @@ var XP_Tracker = XP_Tracker || (function () {
     //
     var ReportLog = function ReportLog(Log) {
 
+        if (state.XP_Tracker.Config.TrackInHandout) {
+            WriteToHandoutLog(Log);
+        }
+
+        SendChat(Log, true);
+
         DebugMessage.apply(this, arguments);
 
     };
@@ -1330,13 +1463,13 @@ var XP_Tracker = XP_Tracker || (function () {
     // This function send a message to the campaigns chat window from XP_tracker
     //  Input: String = message to send
     //  Output: None
-    var SendChat = function SendChat(output_msg, SandToAll) {
+    var SendChat = function SendChat(output_msg, SendToAll) {
 
         DebugMessage.apply(this, arguments);
 
-        SandToAll = (typeof SandToAll !== 'undefined') ? SandToAll : false;
+        SendToAll = (typeof SendToAll !== 'undefined') ? SendToAll : false;
 
-        if (!SandToAll) {
+        if (!SendToAll) {
             output_msg = '/w GM ' + output_msg;
         }
         sendChat(Trans.XP_Tracker_Header, output_msg);
@@ -1355,6 +1488,13 @@ var XP_Tracker = XP_Tracker || (function () {
         if (state.XP_Tracker.Config.TrackInHandout) {
             WriteToHandoutLog(output_msg);
         }
+    };
+
+    // The function is called when the API starts and XP is stored in the SessionXP for a character.  The function will ask the GM if they want to end the session.
+    //  Input: None
+    //  Output: None
+    var SessionOpenAtStart = function SessionOpenAtStart() {
+        CreateButton(Trans.Open_Session, Trans.Yes_Button_Name, COMMAND_END_SESSION);
     };
 
     // The next two functions takes a Roll20 object Id string, an attribute name string and a value and update or create the attribute in the character sheet.  
@@ -1532,8 +1672,21 @@ var XP_Tracker = XP_Tracker || (function () {
         return (output_msg);
     }
 
+    // Toggles a boolean configuration switch.
+    //  Input: Boolean 
+    //  Output: Boolean
     var ToggleConfiguration = function ToggleConfiguration(Bool_Value) {
         log('Bool_Value = ' + Bool_Value);
+        return (!Bool_Value);
+    }
+
+    // Toggles the TrackBySession configuration switch.
+    //  Input: Boolean
+    //  Output: Boolean
+    var ToggleTrackBySession = function ToggleTrackBySession(Bool_Value) {
+        if (state.XP_Tracker.Config.SessionOpen) {
+            CreateButton(Trans.Open_Session, Trans.Yes_Button_Name, COMMAND_END_SESSION);
+        }
         return (!Bool_Value);
     }
 
